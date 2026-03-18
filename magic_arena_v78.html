@@ -2319,14 +2319,14 @@ window.createMachoman = function () {
   const mBrown = _m(0x7A3A10, .76, .0);
   const mShoe  = _m(0xDD0000, .50, .12);
 
-  // BIGGER legs
-  const legL = _buildLegV3(mSkin, mRed, mSkin, mShoe, mWhite, .36,.52,.46,.26);
-  const legR = _buildLegV3(mSkin, mRed, mSkin, mShoe, mWhite, .36,.52,.46,.26);
+  // Shorter stocky legs (shorter thigh+shin), wide and massive
+  const legL = _buildLegV3(mSkin, mRed, mSkin, mShoe, mWhite, .40,.36,.28,.20);
+  const legR = _buildLegV3(mSkin, mRed, mSkin, mShoe, mWhite, .40,.36,.28,.20);
   legL.position.set(-.26,0,0); root.add(legL);
   legR.position.set( .26,0,0); root.add(legR);
-  for (let l = 0; l < 4; l++) {
-    legL.add(_at(_B(.34,.024,.046,mWhite), 0, -.80+l*.055, .22));
-    legR.add(_at(_B(.34,.024,.046,mWhite), 0, -.80+l*.055, .22));
+  for (let l = 0; l < 3; l++) {
+    legL.add(_at(_B(.38,.024,.046,mWhite), 0, -.54+l*.055, .24));
+    legR.add(_at(_B(.38,.024,.046,mWhite), 0, -.54+l*.055, .24));
   }
 
   const pelvisG = new THREE.Group(); pelvisG.position.set(0,0,0); root.add(pelvisG);
@@ -2350,19 +2350,22 @@ window.createMachoman = function () {
   torsoG.add(_at(_B(.36,.30,.17,mSkin),  .20,.54,.22));
   // Trapezius
   torsoG.add(_at(_B(.72,.18,.09,mSkin),  0,.74,-.04));
-  // HUGE shoulder boulders
-  torsoG.add(_at(_O(.26,mSkin), -.56,.62,0));
-  torsoG.add(_at(_O(.26,mSkin),  .56,.62,0));
+  // MASSIVE shoulder boulders
+  torsoG.add(_at(_O(.36,mSkin), -.60,.62,0));
+  torsoG.add(_at(_O(.36,mSkin),  .60,.62,0));
+  // Extra bicep bulge on shoulder
+  torsoG.add(_at(_O(.22,mSkin), -.72,.48,0));
+  torsoG.add(_at(_O(.22,mSkin),  .72,.48,0));
   // Collarbones visible
-  torsoG.add(_at(_B(.24,.04,.04,mSkinL), -.22,.72,.20));
-  torsoG.add(_at(_B(.24,.04,.04,mSkinL),  .22,.72,.20));
+  torsoG.add(_at(_B(.28,.05,.05,mSkinL), -.22,.72,.20));
+  torsoG.add(_at(_B(.28,.05,.05,mSkinL),  .22,.72,.20));
 
-  const aL = _buildArmV3(mSkin,mSkin,mSkinL,mSkin,mSkinL,mSkin, .38,.32, false,false);
-  aL.shoulderG.position.set(-.60,.64,0);
-  aL.shoulderG.rotation.set(.52,.12,.24); torsoG.add(aL.shoulderG);
-  const aR = _buildArmV3(mSkin,mSkin,mSkinL,mSkin,mSkinL,mSkin, .38,.32, false,false);
-  aR.shoulderG.position.set( .60,.64,0);
-  aR.shoulderG.rotation.set(-.28,-.12,-.24); torsoG.add(aR.shoulderG);
+  const aL = _buildArmV3(mSkin,mSkin,mSkinL,mSkin,mSkinL,mSkin, .54,.46, false,false);
+  aL.shoulderG.position.set(-.66,.64,0);
+  aL.shoulderG.rotation.set(.52,.12,.28); torsoG.add(aL.shoulderG);
+  const aR = _buildArmV3(mSkin,mSkin,mSkinL,mSkin,mSkinL,mSkin, .54,.46, false,false);
+  aR.shoulderG.position.set( .66,.64,0);
+  aR.shoulderG.rotation.set(-.28,-.12,-.28); torsoG.add(aR.shoulderG);
 
   const neckG = _buildNeckV3(mSkin,mSkin,.24);
   neckG.position.set(0,.80,0); torsoG.add(neckG);
@@ -2371,17 +2374,17 @@ window.createMachoman = function () {
   const headG = new THREE.Group();
   headG.position.set(0,.28,0); neckG.add(headG);
   headG.add(_at(_B(.52,.48,.48,mSkin),   0,.08,0)); // bigger square head box
-  headG.add(_at(_B(.46,.40,.14,mSkinL),  0,.08,.26)); // face panel
-  // HUGE Sunglasses lenses — BIGGER + more visible
-  headG.add(_at(_B(.60,.10,.07,mBlack),  0,.14,.29));  // thick top bar
-  headG.add(_at(_B(.60,.10,.07,mBlack),  0,.04,.29));  // thick bottom bar
-  headG.add(_at(_B(.28,.20,.08,_m(0x111155,.30,.10,0x0000AA,1.5,true,.85)), -.16,.09,.28)); // L lens BIG
-  headG.add(_at(_B(.28,.20,.08,_m(0x111155,.30,.10,0x0000AA,1.5,true,.85)),  .16,.09,.28)); // R lens BIG
-  headG.add(_at(_B(.04,.04,.14,mBlack), -.30,.09,.22)); // L earpiece
-  headG.add(_at(_B(.04,.04,.14,mBlack),  .30,.09,.22)); // R earpiece
+  headG.add(_at(_B(.46,.40,.06,mSkinL),  0,.08,.22)); // face panel — thin so features protrude
+  // HUGE Sunglasses — pushed OUT in front of face panel (z=0.28+ vs panel front z=0.25)
+  headG.add(_at(_B(.62,.11,.07,mBlack),  0,.14,.34));  // thick top bar (clearly in front)
+  headG.add(_at(_B(.62,.11,.07,mBlack),  0,.03,.34));  // thick bottom bar
+  headG.add(_at(_B(.28,.22,.09,_m(0x0A0A55,.25,.12,0x0000CC,2.5,true,.90)), -.16,.09,.34)); // L lens BIG
+  headG.add(_at(_B(.28,.22,.09,_m(0x0A0A55,.25,.12,0x0000CC,2.5,true,.90)),  .16,.09,.34)); // R lens BIG
+  headG.add(_at(_B(.04,.05,.14,mBlack), -.30,.09,.24)); // L earpiece
+  headG.add(_at(_B(.04,.05,.14,mBlack),  .30,.09,.24)); // R earpiece
   // Side arms of glasses
-  headG.add(_at(_B(.22,.03,.22,mBlack), -.30,.09,.14));
-  headG.add(_at(_B(.22,.03,.22,mBlack),  .30,.09,.14));
+  headG.add(_at(_B(.22,.04,.22,mBlack), -.32,.09,.14));
+  headG.add(_at(_B(.22,.04,.22,mBlack),  .32,.09,.14));
 
   // MASSIVE POMPADOUR — much bigger
   headG.add(_at(_K(.24,.50,4,mBrown),  0,.42,.16, -.38,0,0)); // main quiff big
@@ -2392,17 +2395,17 @@ window.createMachoman = function () {
   headG.add(_at(_K(.14,.22,4,mBrown),  -.26,.50,.06, 0,0,-.52)); // L side spike
   headG.add(_at(_K(.14,.22,4,mBrown),   .26,.50,.06, 0,0, .52)); // R side spike
 
-  // WIDE BIG SMILE with teeth
-  headG.add(_at(_B(.50,.12,.07,_m(0xFF8866,.70)), 0,-.12,.28)); // gum
-  headG.add(_at(_B(.46,.07,.06,_m(0xFFFFEE,.74)), 0,-.10,.30)); // tooth row
+  // WIDE BIG SMILE with teeth — all pushed forward (z=0.34+) so clearly visible
+  headG.add(_at(_B(.52,.14,.08,_m(0xFF8866,.70)), 0,-.12,.34)); // gum
+  headG.add(_at(_B(.48,.08,.07,_m(0xFFFFEE,.74)), 0,-.10,.36)); // tooth row
   // Individual teeth — 8 big ones
   for (let i = 0; i < 8; i++)
-    headG.add(_at(_B(.048,.12,.05,_m(0xFFFFF0,.60)), -.18+i*.052,-.10,.30));
+    headG.add(_at(_B(.050,.13,.06,_m(0xFFFFF0,.60)), -.18+i*.052,-.10,.36));
   // Smile creases wide
-  headG.add(_at(_B(.06,.22,.05,mSkin), -.26,-.06,.28, 0,0,.52));
-  headG.add(_at(_B(.06,.22,.05,mSkin),  .26,-.06,.28, 0,0,-.52));
+  headG.add(_at(_B(.07,.24,.06,mSkin), -.26,-.06,.34, 0,0,.52));
+  headG.add(_at(_B(.07,.24,.06,mSkin),  .26,-.06,.34, 0,0,-.52));
   // Chin cleft
-  headG.add(_at(_B(.08,.08,.06,mSkinL), 0,-.18,.28));
+  headG.add(_at(_B(.09,.09,.07,mSkinL), 0,-.18,.33));
 
   // Hair on back of head
   headG.add(_at(_B(.44,.22,.16,mBrown), 0,.12,-.22)); // back hair base
@@ -8941,10 +8944,10 @@ function firePlayerSpell(){
       if(player.samuraiStrikeIdx == null) player.samuraiStrikeIdx = 0;
       const isWide = (player.samuraiStrikeIdx % 2 === 0);
       player.samuraiStrikeIdx++;
-      const sHalfAng = isWide ? halfAng        : halfAng * 0.28; // narrow = very tight
+      const sHalfAng = isWide ? halfAng        : halfAng * 0.55; // narrow = tighter but not too narrow
       const sRadius  = isWide ? r              : r * 1.9;        // long = much further
       const sDmg     = isWide ? dmg            : dmg * 1.6;      // long = more dmg
-      const sCol     = isWide ? 0xD4AF37       : 0xE0F0FF;       // gold vs icy-white
+      const sCol     = 0xFFD700;                                  // both gold
       const hitAny = _doMeleeArc(sRadius, sHalfAng, aimAngle, sDmg, sCol);
       if(isWide){
         // Wide golden fan swash
@@ -8952,35 +8955,36 @@ function firePlayerSpell(){
         burst(origin.clone().add(new THREE.Vector3(aimDir.x*1.5,1.0,aimDir.z*1.5)), 0xD4AF37, hitAny?16:8, 0.10, 0.55);
         burst(origin.clone().add(new THREE.Vector3(aimDir.x*1.5,1.0,aimDir.z*1.5)), 0xFFFFCC, hitAny?8:4, 0.06, 0.35);
       } else {
-        // Narrow white thrust — elongated forward stab effect
-        const thrustFront = origin.clone().add(new THREE.Vector3(aimDir.x*sRadius*0.7,1.0,aimDir.z*sRadius*0.7));
+        // Narrow gold thrust — wide flat blade flash in front
+        const thrustFront = origin.clone().add(new THREE.Vector3(aimDir.x*sRadius*0.55,1.0,aimDir.z*sRadius*0.55));
         const thrustMesh = new THREE.Mesh(
-          new THREE.BoxGeometry(0.12, 0.10, sRadius*1.0),
-          new THREE.MeshBasicMaterial({color:0xE0F8FF,transparent:true,opacity:0.85,depthWrite:false})
+          new THREE.BoxGeometry(sRadius*0.70, 0.08, sRadius*0.80),
+          new THREE.MeshBasicMaterial({color:0xFFD700,transparent:true,opacity:0.82,depthWrite:false})
         );
         thrustMesh.rotation.y = aimAngle;
-        thrustMesh.position.copy(origin).setY(1.0);
-        thrustMesh.position.addScaledVector(aimDir, sRadius*0.5);
+        thrustMesh.position.copy(origin).setY(1.0).addScaledVector(aimDir, sRadius*0.5);
         scene.add(thrustMesh);
-        setTimeout(()=>{ scene.remove(thrustMesh); thrustMesh.geometry.dispose(); thrustMesh.material.dispose(); }, 180);
-        burst(thrustFront, 0xE0F8FF, hitAny?18:9, 0.08, 0.50);
-        burst(thrustFront, 0xFFFFFF, hitAny?8:4,  0.05, 0.28);
-        // Lunge forward
+        setTimeout(()=>{ scene.remove(thrustMesh); thrustMesh.geometry.dispose(); thrustMesh.material.dispose(); }, 200);
+        createSwashEffect(new THREE.Vector3(origin.x,1.0,origin.z), aimAngle, sHalfAng, sRadius*0.85, 0xFFD700);
+        burst(thrustFront, 0xFFD700, hitAny?20:10, 0.09, 0.52);
+        burst(thrustFront, 0xFFFFAA, hitAny?10:5,  0.06, 0.30);
+        // Short lunge forward
         player.mesh.position.addScaledVector(aimDir, 0.6);
       }
       // Ult: ONE big curved wave per attack type
       if(player.samuraiUltTimer > 0){
         if(isWide){
-          // Wide crescent wave: custom ring-sector BufferGeometry lying flat in XZ plane
-          const innerR = sRadius * 0.22;
-          const outerR = sRadius * 0.72;
-          const arcSegs = 22;
+          // Wide crescent wave: ring-sector geometry centered at origin, moving forward in aimDir
+          const innerR = sRadius * 0.20;
+          const outerR = sRadius * 1.05; // bigger wave
+          const arcSegs = 24;
           const wPositions = [];
           const wIndices = [];
+          // Arc built in local space, centered on Z+ (angle 0 = forward); mesh rotated by aimAngle
           for(let wi=0; wi<=arcSegs; wi++){
-            const ang = (aimAngle - sHalfAng) + (wi/arcSegs)*sHalfAng*2;
-            wPositions.push(Math.sin(ang)*innerR, 0, Math.cos(ang)*innerR);
-            wPositions.push(Math.sin(ang)*outerR, 0, Math.cos(ang)*outerR);
+            const _a = -sHalfAng + (wi/arcSegs)*sHalfAng*2;
+            wPositions.push(Math.sin(_a)*innerR, 0, Math.cos(_a)*innerR);
+            wPositions.push(Math.sin(_a)*outerR, 0, Math.cos(_a)*outerR);
           }
           for(let wi=0; wi<arcSegs; wi++){
             const a=wi*2,b=a+1,c=a+2,d=a+3;
@@ -8991,33 +8995,34 @@ function firePlayerSpell(){
           wGeo.setIndex(wIndices);
           const wMesh = new THREE.Mesh(wGeo, new THREE.MeshBasicMaterial({color:0xFFD700,transparent:true,opacity:0.90,depthWrite:false,side:THREE.DoubleSide}));
           wMesh.position.copy(origin).setY(1.0);
+          wMesh.rotation.y = aimAngle; // rotate arc to face aim direction
           scene.add(wMesh);
           projectiles.push({
             mesh:wMesh, dir:aimDir.clone(), speed:11, damage:sDmg*0.55,
-            owner:'player', life:0.65, radius:outerR,
+            owner:'player', life:0.70, radius:outerR,
             trailColor:0xFFD700, trailTimer:0, remainingHits:99,
-            hitEnemies:new Set(), _lockY:1.0
+            hitEnemies:new Set(), _lockY:1.0, _xzHit:true
           });
         } else {
-          // Narrow horizontal curved wave: C-shaped tube lying flat in XZ plane
+          // Narrow horizontal curved C-wave: tube starts at origin, sweeps forward
           const perp = new THREE.Vector3(-aimDir.z, 0, aimDir.x);
-          const depth = sRadius * 0.88;
+          const depth = sRadius * 0.95;
           const curve = new THREE.CatmullRomCurve3([
-            new THREE.Vector3(0,0,0).addScaledVector(perp, -sRadius*0.28),
-            new THREE.Vector3(0,0,0).addScaledVector(aimDir, depth*0.45).addScaledVector(perp, sRadius*0.10),
-            new THREE.Vector3(0,0,0).addScaledVector(aimDir, depth).addScaledVector(perp, sRadius*0.28),
+            new THREE.Vector3(0, 0, 0),                                                      // start at player
+            new THREE.Vector3(0,0,0).addScaledVector(aimDir, depth*0.5).addScaledVector(perp, sRadius*0.22),  // curve mid
+            new THREE.Vector3(0,0,0).addScaledVector(aimDir, depth).addScaledVector(perp, sRadius*0.38),       // end
           ]);
           const tubeMesh = new THREE.Mesh(
-            new THREE.TubeGeometry(curve, 18, 0.13, 4, false),
-            new THREE.MeshBasicMaterial({color:0xC8ECFF,transparent:true,opacity:0.94,depthWrite:false,side:THREE.DoubleSide})
+            new THREE.TubeGeometry(curve, 20, 0.18, 6, false),
+            new THREE.MeshBasicMaterial({color:0xFFD700,transparent:true,opacity:0.92,depthWrite:false,side:THREE.DoubleSide})
           );
           tubeMesh.position.copy(origin).setY(1.0);
           scene.add(tubeMesh);
           projectiles.push({
             mesh:tubeMesh, dir:aimDir.clone(), speed:20, damage:sDmg*0.70,
             owner:'player', life:0.75, radius:depth*0.55,
-            trailColor:0xC8ECFF, trailTimer:0, remainingHits:99,
-            hitEnemies:new Set(), _lockY:1.0
+            trailColor:0xFFD700, trailTimer:0, remainingHits:99,
+            hitEnemies:new Set(), _lockY:1.0, _xzHit:true
           });
         }
         burst(origin.clone().add(new THREE.Vector3(0,1.0,0)), 0xFFD700, 10, 0.09, 0.45);
@@ -9033,9 +9038,15 @@ function firePlayerSpell(){
       const sw = origin.clone().add(new THREE.Vector3(aimDir.x*2.0,1.0,aimDir.z*2.0));
       burst(sw, 0xFF6060, hitAny?14:7, 0.10, 0.55);
       burst(sw, 0xFFFFFF, hitAny?6:3,  0.07, 0.35);
-      // Forward lunge
-      const lungeDist = player.machomanUltActive ? 1.2 : 0.8;
-      player.mesh.position.addScaledVector(aimDir, lungeDist);
+      // Forward dash (smooth animated lunge, not instant teleport)
+      const lungeDist = player.machomanUltActive ? 2.2 : 1.4;
+      if(!player._machomanLunge) player._machomanLunge = {active:false, dir:new THREE.Vector3(), time:0, duration:0.12, dist:0, traveled:0};
+      player._machomanLunge.active = true;
+      player._machomanLunge.dir.copy(aimDir);
+      player._machomanLunge.time = 0;
+      player._machomanLunge.duration = 0.12;
+      player._machomanLunge.dist = lungeDist;
+      player._machomanLunge.traveled = 0;
       // Knockback enemies
       const kbDist = player.machomanUltActive ? 3.0 : 2.0;
       for(const e of enemies){
@@ -11014,6 +11025,19 @@ function updatePlayer(dt){
     }
   }
 
+  // ── Machoman: smooth punch lunge animation ──
+  if(player._machomanLunge && player._machomanLunge.active){
+    const ml = player._machomanLunge;
+    ml.time += dt;
+    const t = Math.min(1, ml.time / ml.duration);
+    const step = ml.dist * dt / ml.duration;
+    const remaining = ml.dist - ml.traveled;
+    const move = Math.min(step, remaining);
+    player.mesh.position.addScaledVector(ml.dir, move);
+    ml.traveled += move;
+    if(t >= 1) ml.active = false;
+  }
+
   // ── Miner: passive step rocks (10% chance per ~0.5 units moved) ──
   if(_heroId === 'miner'){
     const moveLen = player.mesh.position.distanceTo(player._lastPos || player.mesh.position.clone());
@@ -11062,7 +11086,10 @@ function updatePlayer(dt){
         if(target){
           const gDir = target.mesh.position.clone().sub(player.mesh.position).setY(0).normalize();
           const gPos = player.mesh.position.clone().add(new THREE.Vector3(0,1.0,0));
-          createProjectile(gPos, gDir, 'player', {size:0.10,color:0xFFAA00,speed:18,damage:player.damage*0.3,life:0.7,remainingHits:1});
+          const gProj = {size:0.10,color:0xFFAA00,speed:18,damage:player.damage*0.3,life:0.7,remainingHits:1};
+          createProjectile(gPos, gDir, 'player', gProj);
+          // Mark last added projectile to use XZ-only hit detection (avoids miss due to Y offset)
+          if(projectiles.length > 0) projectiles[projectiles.length-1]._xzHit = true;
         }
       }
     }
@@ -11322,27 +11349,44 @@ function updatePlayer(dt){
     worldAttack.applyAxisAngle(new THREE.Vector3(0,1,0),cameraAngle);
     player.aim.copy(worldAttack).normalize();
   }
-  // Самурай: показываем индикатор текущей атаки пока целимся
+  // Самурай: 3D-дуга в сцене показывает тип и зону следующей атаки
   if((player.heroId||settings.hero)==='samurai'){
-    let samInd = document.getElementById('samurai-attack-indicator');
-    if(attackMag>.04 && !dashAim.active){
-      if(!samInd){
-        samInd = document.createElement('div');
-        samInd.id = 'samurai-attack-indicator';
-        samInd.style.cssText='position:fixed;bottom:130px;left:50%;transform:translateX(-50%);padding:4px 14px;border-radius:8px;font-size:13px;font-weight:bold;letter-spacing:.12em;pointer-events:none;z-index:999;transition:opacity .15s';
-        document.body.appendChild(samInd);
+    const _samProf = heroAttackProfiles.samurai || {};
+    const _samR = _samProf.radius || 3.2;
+    const _samHalf = _samProf.halfAng || Math.PI*0.42;
+    const nextIsWide = ((player.samuraiStrikeIdx||0) % 2 === 0);
+    const _indHalf = nextIsWide ? _samHalf : _samHalf * 0.55;
+    const _indR    = nextIsWide ? _samR    : _samR * 1.9;
+    const _indColor= nextIsWide ? 0xFFD700 : 0xFFD700;
+    const _indOpac = nextIsWide ? 0.28 : 0.22;
+    // Rebuild arc indicator if type changed or doesn't exist
+    if(!player._samArcInd || player._samArcInd._isWide !== nextIsWide){
+      if(player._samArcInd){ scene.remove(player._samArcInd); player._samArcInd.geometry.dispose(); player._samArcInd.material.dispose(); }
+      const _arcSegs = 18;
+      const _wPos = [], _wIdx = [];
+      for(let _wi=0; _wi<=_arcSegs; _wi++){
+        const _a = -_indHalf + (_wi/_arcSegs)*_indHalf*2;
+        _wPos.push(Math.sin(_a)*0.35, 0, Math.cos(_a)*0.35);
+        _wPos.push(Math.sin(_a)*_indR,  0, Math.cos(_a)*_indR);
       }
-      const nextIsWide = ((player.samuraiStrikeIdx||0) % 2 === 0);
-      if(nextIsWide){
-        samInd.textContent = '--- ШИРОКАЯ ---';
-        samInd.style.cssText = samInd.style.cssText.replace(/color:[^;]+/,'');
-        samInd.style.background='rgba(180,140,0,.82)'; samInd.style.color='#FFE87A'; samInd.style.opacity='1';
-      } else {
-        samInd.textContent = '>>> ДЛИННАЯ >>>';
-        samInd.style.background='rgba(180,220,255,.18)'; samInd.style.color='#C8ECFF'; samInd.style.opacity='1';
+      for(let _wi=0; _wi<_arcSegs; _wi++){
+        const a=_wi*2,b=a+1,c=a+2,d=a+3;
+        _wIdx.push(a,b,c, b,d,c);
       }
-    } else if(samInd){ samInd.style.opacity='0'; }
+      const _geo = new THREE.BufferGeometry();
+      _geo.setAttribute('position', new THREE.Float32BufferAttribute(_wPos,3));
+      _geo.setIndex(_wIdx);
+      const _ind = new THREE.Mesh(_geo, new THREE.MeshBasicMaterial({color:_indColor,transparent:true,opacity:_indOpac,depthWrite:false,side:THREE.DoubleSide}));
+      _ind._isWide = nextIsWide;
+      scene.add(_ind);
+      player._samArcInd = _ind;
+    }
+    // Update position and rotation every frame
+    player._samArcInd.position.copy(player.mesh.position).setY(0.12);
+    player._samArcInd.rotation.y = attackMag>.04 && !dashAim.active ? Math.atan2(player.aim.x, player.aim.z) : (player._samArcInd.rotation.y||0);
+    player._samArcInd.visible = (attackMag>.04 && !dashAim.active);
   } else {
+    if(player._samArcInd){ scene.remove(player._samArcInd); player._samArcInd.geometry.dispose(); player._samArcInd.material.dispose(); player._samArcInd = null; }
     const samInd = document.getElementById('samurai-attack-indicator');
     if(samInd) samInd.remove();
   }
@@ -11928,7 +11972,7 @@ function updateProjectiles(arr,dt,hitEnemy){
         const e=enemies[j];
         if(p.hitEnemies && p.hitEnemies.has(e)) continue;
         const _eCenter = e.mesh.position.clone().add(new THREE.Vector3(0,e.barOffset*.35,0));
-        const d = e.type==='forest_spirit'
+        const d = (e.type==='forest_spirit' || p._xzHit)
           ? Math.hypot(p.mesh.position.x-e.mesh.position.x, p.mesh.position.z-e.mesh.position.z)
           : p.mesh.position.distanceTo(_eCenter);
         if(d<p.radius+e.radius){
@@ -12018,7 +12062,7 @@ function updateProjectiles(arr,dt,hitEnemy){
           // ── Snowball: grow + capture enemies inside ──
           if(p._snowball && !e._snowballCaptured){
             p.absorbed = (p.absorbed||0) + 1;
-            p.life += 1.2; // extend life per captured enemy
+            p.life += 1.2; p._baseLife += 1.2; // extend life; sync _baseLife so elapsed stays correct → ball doesn't shrink
             e._snowballCaptured = true;
             if(!p.capturedEnemies) p.capturedEnemies = [];
             p.capturedEnemies.push(e);
