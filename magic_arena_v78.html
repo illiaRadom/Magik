@@ -8937,70 +8937,75 @@ function firePlayerSpell(){
       }
 
     } else if(heroId === 'samurai'){
-      // Alternating wide (slice) / long (thrust) strikes
+      // Alternating wide (slice) / long thrust strikes
       if(player.samuraiStrikeIdx == null) player.samuraiStrikeIdx = 0;
       const isWide = (player.samuraiStrikeIdx % 2 === 0);
       player.samuraiStrikeIdx++;
-      const sHalfAng = isWide ? halfAng         : halfAng * 0.4; // narrow = tighter
-      const sRadius  = isWide ? r               : r * 1.6;       // long = further
-      const sDmg     = isWide ? dmg             : dmg * 1.5;     // long = 50% more dmg
-      const sCol     = isWide ? 0xD4AF37        : 0xFFFFAA;
+      const sHalfAng = isWide ? halfAng        : halfAng * 0.28; // narrow = very tight
+      const sRadius  = isWide ? r              : r * 1.9;        // long = much further
+      const sDmg     = isWide ? dmg            : dmg * 1.6;      // long = more dmg
+      const sCol     = isWide ? 0xD4AF37       : 0xE0F0FF;       // gold vs icy-white
       const hitAny = _doMeleeArc(sRadius, sHalfAng, aimAngle, sDmg, sCol);
-      createSwashEffect(new THREE.Vector3(origin.x,1.0,origin.z), aimAngle, sHalfAng, sRadius*0.90, sCol);
-      const sw = origin.clone().add(new THREE.Vector3(aimDir.x*(isWide?1.5:2.4),1.0,aimDir.z*(isWide?1.5:2.4)));
-      burst(sw, sCol, hitAny?14:7, 0.09, 0.52);
-      // Ult: send golden waves — wide attack = wide wave, narrow attack = long narrow wave
+      if(isWide){
+        // Wide golden fan swash
+        createSwashEffect(new THREE.Vector3(origin.x,1.0,origin.z), aimAngle, sHalfAng, sRadius*0.90, 0xD4AF37);
+        burst(origin.clone().add(new THREE.Vector3(aimDir.x*1.5,1.0,aimDir.z*1.5)), 0xD4AF37, hitAny?16:8, 0.10, 0.55);
+        burst(origin.clone().add(new THREE.Vector3(aimDir.x*1.5,1.0,aimDir.z*1.5)), 0xFFFFCC, hitAny?8:4, 0.06, 0.35);
+      } else {
+        // Narrow white thrust — elongated forward stab effect
+        const thrustFront = origin.clone().add(new THREE.Vector3(aimDir.x*sRadius*0.7,1.0,aimDir.z*sRadius*0.7));
+        const thrustMesh = new THREE.Mesh(
+          new THREE.BoxGeometry(0.12, 0.10, sRadius*1.0),
+          new THREE.MeshBasicMaterial({color:0xE0F8FF,transparent:true,opacity:0.85,depthWrite:false})
+        );
+        thrustMesh.rotation.y = aimAngle;
+        thrustMesh.position.copy(origin).setY(1.0);
+        thrustMesh.position.addScaledVector(aimDir, sRadius*0.5);
+        scene.add(thrustMesh);
+        setTimeout(()=>{ scene.remove(thrustMesh); thrustMesh.geometry.dispose(); thrustMesh.material.dispose(); }, 180);
+        burst(thrustFront, 0xE0F8FF, hitAny?18:9, 0.08, 0.50);
+        burst(thrustFront, 0xFFFFFF, hitAny?8:4,  0.05, 0.28);
+        // Lunge forward
+        player.mesh.position.addScaledVector(aimDir, 0.6);
+      }
+      // Ult: ONE big wave per attack type
       if(player.samuraiUltTimer > 0){
         if(isWide){
-          // Wide wave: a wide flat blade arc
-          const waveSegs = 7;
-          const wAngleSpan = sHalfAng * 2;
-          const waveDmg = sDmg * 0.40;
-          for(let wi=0; wi<waveSegs; wi++){
-            const wAngle = aimAngle - sHalfAng + (wi/(waveSegs-1))*wAngleSpan;
-            const wDir = new THREE.Vector3(Math.sin(wAngle),0,Math.cos(wAngle)).normalize();
-            const wPos = origin.clone().add(new THREE.Vector3(wDir.x,1.0,wDir.z));
-            // Wide flat wave mesh (horizontal blade shape)
-            const wMesh = new THREE.Mesh(
-              new THREE.BoxGeometry(0.65, 0.07, 0.14),
-              new THREE.MeshBasicMaterial({color:0xFFD700,transparent:true,opacity:0.88,depthWrite:false})
-            );
-            wMesh.rotation.y = wAngle;
-            wMesh.position.copy(wPos);
-            scene.add(wMesh);
-            projectiles.push({
-              mesh:wMesh, dir:wDir.clone(), speed:12, damage:waveDmg,
-              owner:'player', life:0.55, radius:0.30,
-              trailColor:0xFFD700, trailTimer:0, remainingHits:1,
-              hitEnemies:new Set(), _lockY:1.0
-            });
-          }
+          // ONE large wide crescent wave — tall flat plane swept across the arc
+          const arcWidth = Math.sin(sHalfAng) * sRadius * 2.2;
+          const wMesh = new THREE.Mesh(
+            new THREE.BoxGeometry(arcWidth, 0.12, 0.35),
+            new THREE.MeshBasicMaterial({color:0xFFD700,transparent:true,opacity:0.90,depthWrite:false})
+          );
+          wMesh.rotation.y = aimAngle;
+          wMesh.position.copy(origin).setY(1.0);
+          wMesh.position.addScaledVector(aimDir, 1.2);
+          scene.add(wMesh);
+          projectiles.push({
+            mesh:wMesh, dir:aimDir.clone(), speed:11, damage:sDmg*0.55,
+            owner:'player', life:0.70, radius:arcWidth*0.5,
+            trailColor:0xFFD700, trailTimer:0, remainingHits:99,
+            hitEnemies:new Set(), _lockY:1.0
+          });
         } else {
-          // Narrow long wave: elongated sword-beam shape
-          const waveSegs = 3;
-          const wAngleSpan = sHalfAng * 2;
-          const waveDmg = sDmg * 0.65;
-          for(let wi=0; wi<waveSegs; wi++){
-            const wAngle = aimAngle - sHalfAng + (wi/(Math.max(1,waveSegs-1)))*wAngleSpan;
-            const wDir = new THREE.Vector3(Math.sin(wAngle),0,Math.cos(wAngle)).normalize();
-            const wPos = origin.clone().add(new THREE.Vector3(wDir.x,1.0,wDir.z));
-            // Narrow elongated wave mesh (sword beam)
-            const wMesh = new THREE.Mesh(
-              new THREE.BoxGeometry(0.13, 0.10, 0.80),
-              new THREE.MeshBasicMaterial({color:0xFFFAA0,transparent:true,opacity:0.92,depthWrite:false})
-            );
-            wMesh.rotation.y = wAngle;
-            wMesh.position.copy(wPos);
-            scene.add(wMesh);
-            projectiles.push({
-              mesh:wMesh, dir:wDir.clone(), speed:18, damage:waveDmg,
-              owner:'player', life:0.95, radius:0.18,
-              trailColor:0xFFFAA0, trailTimer:0, remainingHits:1,
-              hitEnemies:new Set(), _lockY:1.0
-            });
-          }
+          // ONE long narrow sword-beam
+          const beamLen = sRadius * 1.1;
+          const wMesh = new THREE.Mesh(
+            new THREE.BoxGeometry(0.16, 0.12, beamLen),
+            new THREE.MeshBasicMaterial({color:0xE0F8FF,transparent:true,opacity:0.95,depthWrite:false})
+          );
+          wMesh.rotation.y = aimAngle;
+          wMesh.position.copy(origin).setY(1.0);
+          wMesh.position.addScaledVector(aimDir, beamLen*0.5);
+          scene.add(wMesh);
+          projectiles.push({
+            mesh:wMesh, dir:aimDir.clone(), speed:20, damage:sDmg*0.70,
+            owner:'player', life:0.80, radius:0.22,
+            trailColor:0xE0F8FF, trailTimer:0, remainingHits:99,
+            hitEnemies:new Set(), _lockY:1.0
+          });
         }
-        burst(origin.clone().add(new THREE.Vector3(0,1.0,0)), 0xFFD700, 8, 0.08, 0.4);
+        burst(origin.clone().add(new THREE.Vector3(0,1.0,0)), 0xFFD700, 10, 0.09, 0.45);
       }
 
     } else if(heroId === 'machoman'){
@@ -11834,7 +11839,7 @@ function updateProjectiles(arr,dt,hitEnemy){
     // ── Snowball: grow over time + carry captured enemies ──
     if(p._snowball){
       const elapsed = (p._baseLife||5.0) - p.life;
-      const growR = 0.33 + elapsed * 0.56 + p.absorbed * 0.20;
+      const growR = 0.33 + elapsed * 1.12 + p.absorbed * 0.20;
       p.radius = growR;
       p.mesh.scale.setScalar(growR / 0.30);
       // Carry captured enemies
@@ -12811,7 +12816,7 @@ function updateHUD(){
   const shield = isGnome ? Math.round(player.gnomeMechShield||0) : 0;
   if(isGnome && shield > 0){
     hpEl.textContent = hp;
-    maxHpEl.textContent = mhp + '+' + shield + '🛡';
+    maxHpEl.innerHTML = mhp + '+' + shield + '<svg width="10" height="10" viewBox="0 0 12 12" style="vertical-align:middle;margin-left:1px"><path d="M6 1 L11 3.5 L11 7 Q11 10 6 11.5 Q1 10 1 7 L1 3.5 Z" fill="#ef4444" stroke="#b91c1c" stroke-width="0.8"/></svg>';
     hpEl.style.color = '#4af';
     maxHpEl.style.color = '#4af';
     if(hudHpBar){ hudHpBar.style.width=`${Math.min(100,hp/mhp*100)}%`; hudHpBar.style.background='linear-gradient(90deg,#2299ff,#66ccff)'; }
