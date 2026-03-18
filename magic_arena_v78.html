@@ -6597,13 +6597,15 @@ function updateAimIndicators(){
     const ap = (typeof heroAttackProfiles !== 'undefined') ? (heroAttackProfiles[heroId]||{}) : {};
     const isMeleeHero = ap.melee || hero.attackType === 'melee';
     if(isMeleeHero){
+      // Samurai uses its own custom arc indicator (_samArcInd), skip generic meleeCone
+      if(heroId === 'samurai') { ind.meleeCone.visible = false; } else {
       // Scale arc to actual profile radius + halfAng
       const rScale = (ap.radius || 2.8) / 2.8;
       const aScale = (ap.halfAng || Math.PI*0.32) / (Math.PI*0.32);
       ind.meleeCone.position.set(px, 0, pz);
       ind.meleeCone.rotation.y = aimAngle;
       ind.meleeCone.scale.set(aScale, 1, rScale);
-      ind.meleeCone.visible = true;
+      ind.meleeCone.visible = true; }
     } else {
       // Scale ranged cone based on projLife * projSpeed (effective range)
       const baseRange = 2.2 * 15; // default projLife*projSpeed
@@ -7027,6 +7029,7 @@ function resetPlayerStats(){
   player.samuraiStrikeIdx = 0;
   if(player._machomanAura){ player.mesh?.remove(player._machomanAura); player._machomanAura=null; }
   if(player._machomanAura2){ player.mesh?.remove(player._machomanAura2); player._machomanAura2=null; }
+  if(player._machomanAura3){ player.mesh?.remove(player._machomanAura3); player._machomanAura3=null; }
   player.machomanUltActive = false; player.machomanUltTimer = 0;
   const _mhud = document.getElementById('machoman-ult-hud'); if(_mhud) _mhud.remove();
   rebuildPlayerMesh();
@@ -8959,19 +8962,24 @@ function firePlayerSpell(){
         burst(origin.clone().add(new THREE.Vector3(aimDir.x*1.5,1.0,aimDir.z*1.5)), 0xD4AF37, hitAny?16:8, 0.10, 0.55);
         burst(origin.clone().add(new THREE.Vector3(aimDir.x*1.5,1.0,aimDir.z*1.5)), 0xFFFFCC, hitAny?8:4, 0.06, 0.35);
       } else {
-        // Narrow gold thrust — wide flat blade flash in front
-        const thrustFront = origin.clone().add(new THREE.Vector3(aimDir.x*sRadius*0.55,1.0,aimDir.z*sRadius*0.55));
-        const thrustMesh = new THREE.Mesh(
-          new THREE.BoxGeometry(sRadius*0.70, 0.08, sRadius*0.80),
-          new THREE.MeshBasicMaterial({color:0xFFD700,transparent:true,opacity:0.82,depthWrite:false})
-        );
-        thrustMesh.rotation.y = aimAngle;
-        thrustMesh.position.copy(origin).setY(1.0).addScaledVector(aimDir, sRadius*0.5);
-        scene.add(thrustMesh);
-        setTimeout(()=>{ scene.remove(thrustMesh); thrustMesh.geometry.dispose(); thrustMesh.material.dispose(); }, 200);
-        createSwashEffect(new THREE.Vector3(origin.x,1.0,origin.z), aimAngle, sHalfAng, sRadius*0.85, 0xFFD700);
-        burst(thrustFront, 0xFFD700, hitAny?20:10, 0.09, 0.52);
-        burst(thrustFront, 0xFFFFAA, hitAny?10:5,  0.06, 0.30);
+        // Narrow gold thrust — wide flat RECTANGULAR blade that fills the whole attack zone
+        const thrustFront = origin.clone().add(new THREE.Vector3(aimDir.x*sRadius*0.6,1.0,aimDir.z*sRadius*0.6));
+        // Two overlapping rectangles for a clear visible blade flash
+        const thrustW = sRadius * 1.35; // very wide
+        const thrustD = sRadius * 1.45; // long depth
+        for(let ti=0; ti<2; ti++){
+          const tm = new THREE.Mesh(
+            new THREE.BoxGeometry(thrustW - ti*0.15, 0.06 + ti*0.06, thrustD - ti*0.10),
+            new THREE.MeshBasicMaterial({color: ti===0 ? 0xFFD700 : 0xFFEE55, transparent:true, opacity:0.80 - ti*0.20, depthWrite:false})
+          );
+          tm.rotation.y = aimAngle;
+          tm.position.copy(origin).setY(1.0).addScaledVector(aimDir, sRadius*0.55);
+          scene.add(tm);
+          const _tm = tm;
+          setTimeout(()=>{ scene.remove(_tm); _tm.geometry.dispose(); _tm.material.dispose(); }, 220);
+        }
+        burst(thrustFront, 0xFFD700, hitAny?22:11, 0.10, 0.54);
+        burst(thrustFront, 0xFFFFAA, hitAny?12:6,  0.07, 0.32);
         // Short lunge forward
         player.mesh.position.addScaledVector(aimDir, 0.6);
       }
@@ -9008,23 +9016,19 @@ function firePlayerSpell(){
             hitEnemies:new Set(), _lockY:1.0, _xzHit:true
           });
         } else {
-          // Narrow horizontal curved C-wave: tube starts at origin, sweeps forward
-          const perp = new THREE.Vector3(-aimDir.z, 0, aimDir.x);
-          const depth = sRadius * 0.95;
-          const curve = new THREE.CatmullRomCurve3([
-            new THREE.Vector3(0, 0, 0),                                                      // start at player
-            new THREE.Vector3(0,0,0).addScaledVector(aimDir, depth*0.5).addScaledVector(perp, sRadius*0.22),  // curve mid
-            new THREE.Vector3(0,0,0).addScaledVector(aimDir, depth).addScaledVector(perp, sRadius*0.38),       // end
-          ]);
-          const tubeMesh = new THREE.Mesh(
-            new THREE.TubeGeometry(curve, 20, 0.18, 6, false),
-            new THREE.MeshBasicMaterial({color:0xFFD700,transparent:true,opacity:0.92,depthWrite:false,side:THREE.DoubleSide})
+          // Narrow thrust wave: flat wide rectangle traveling fast in aim direction
+          const depth = sRadius * 1.0;
+          const waveW = sRadius * 1.20;
+          const wMesh = new THREE.Mesh(
+            new THREE.BoxGeometry(waveW, 0.10, depth),
+            new THREE.MeshBasicMaterial({color:0xFFD700,transparent:true,opacity:0.90,depthWrite:false,side:THREE.DoubleSide})
           );
-          tubeMesh.position.copy(origin).setY(1.0);
-          scene.add(tubeMesh);
+          wMesh.rotation.y = aimAngle;
+          wMesh.position.copy(origin).setY(1.0).addScaledVector(aimDir, depth * 0.5);
+          scene.add(wMesh);
           projectiles.push({
-            mesh:tubeMesh, dir:aimDir.clone(), speed:20, damage:sDmg*0.70,
-            owner:'player', life:0.75, radius:depth*0.55,
+            mesh:wMesh, dir:aimDir.clone(), speed:22, damage:sDmg*0.70,
+            owner:'player', life:0.70, radius:waveW * 0.5,
             trailColor:0xFFD700, trailTimer:0, remainingHits:99,
             hitEnemies:new Set(), _lockY:1.0, _xzHit:true
           });
@@ -11026,46 +11030,52 @@ function updatePlayer(dt){
     if(player.machomanUltTimer <= 0){
       player.machomanUltActive = false;
       player.speed = player.baseSpeed || player.speed / 1.5;
-      // Remove aura on end
       if(player._machomanAura){ player.mesh.remove(player._machomanAura); player._machomanAura=null; }
       if(player._machomanAura2){ player.mesh.remove(player._machomanAura2); player._machomanAura2=null; }
+      if(player._machomanAura3){ player.mesh.remove(player._machomanAura3); player._machomanAura3=null; }
       const ultEndEl = document.getElementById('machoman-ult-hud'); if(ultEndEl) ultEndEl.remove();
     } else {
-      // Inner spinning ring (red)
+      // Inner spinning red ring (close to feet)
       if(!player._machomanAura){
-        const aGeo = new THREE.TorusGeometry(0.90, 0.10, 8, 32);
-        const aMat = new THREE.MeshBasicMaterial({color:0xFF3300,transparent:true,opacity:0.85,depthWrite:false});
-        player._machomanAura = new THREE.Mesh(aGeo, aMat);
+        const aGeo = new THREE.TorusGeometry(0.88, 0.13, 8, 32);
+        player._machomanAura = new THREE.Mesh(aGeo, new THREE.MeshBasicMaterial({color:0xFF2200,transparent:true,opacity:0.90,depthWrite:false}));
         player._machomanAura.rotation.x = Math.PI/2;
-        player._machomanAura.position.set(0, 0.08, 0);
+        player._machomanAura.position.set(0, 0.10, 0);
         player.mesh.add(player._machomanAura);
       }
-      // Outer pulsing ring (orange)
+      // Mid orange ring
       if(!player._machomanAura2){
-        const a2Geo = new THREE.TorusGeometry(1.30, 0.06, 6, 28);
-        const a2Mat = new THREE.MeshBasicMaterial({color:0xFF8800,transparent:true,opacity:0.55,depthWrite:false});
-        player._machomanAura2 = new THREE.Mesh(a2Geo, a2Mat);
+        const a2Geo = new THREE.TorusGeometry(1.25, 0.08, 6, 28);
+        player._machomanAura2 = new THREE.Mesh(a2Geo, new THREE.MeshBasicMaterial({color:0xFF7700,transparent:true,opacity:0.70,depthWrite:false}));
         player._machomanAura2.rotation.x = Math.PI/2;
         player._machomanAura2.position.set(0, 0.06, 0);
         player.mesh.add(player._machomanAura2);
       }
-      // Animate: spin inner ring, pulse outer ring
-      const t = Date.now() * 0.004;
-      if(player._machomanAura)  player._machomanAura.rotation.z  = t * 2.5;
-      if(player._machomanAura2) player._machomanAura2.material.opacity = 0.35 + Math.sin(t*3)*0.30;
-      // Occasional red sparks off the body
-      if(Math.random() < 0.18){
-        const sp = player.mesh.position.clone().add(new THREE.Vector3((Math.random()-.5)*1.2, 0.8+Math.random()*0.8, (Math.random()-.5)*1.2));
-        burst(sp, 0xFF4400, 4, 0.07, 0.30);
+      // Tall vertical spinning ring around whole body (chest-height)
+      if(!player._machomanAura3){
+        const a3Geo = new THREE.TorusGeometry(1.10, 0.07, 6, 28);
+        player._machomanAura3 = new THREE.Mesh(a3Geo, new THREE.MeshBasicMaterial({color:0xFF4400,transparent:true,opacity:0.60,depthWrite:false}));
+        player._machomanAura3.position.set(0, 1.0, 0); // at chest height
+        player.mesh.add(player._machomanAura3);
       }
-      // HUD bar showing remaining time
+      const _t = Date.now() * 0.004;
+      if(player._machomanAura)  player._machomanAura.rotation.z   = _t * 2.8;
+      if(player._machomanAura2) player._machomanAura2.rotation.z  = -_t * 1.8;
+      if(player._machomanAura2) player._machomanAura2.material.opacity = 0.45 + Math.sin(_t*3)*0.30;
+      if(player._machomanAura3) player._machomanAura3.rotation.y  = _t * 1.5; // spinning vertical ring
+      // Heavy red sparks
+      if(Math.random() < 0.30){
+        const sp = player.mesh.position.clone().add(new THREE.Vector3((Math.random()-.5)*1.4, 0.4+Math.random()*1.6, (Math.random()-.5)*1.4));
+        burst(sp, Math.random()<0.5 ? 0xFF3300 : 0xFF8800, 5, 0.08, 0.35);
+      }
+      // HUD: prominent label above HP bar area (top-left)
       let ultHud = document.getElementById('machoman-ult-hud');
       if(!ultHud){
         ultHud = document.createElement('div');
         ultHud.id = 'machoman-ult-hud';
-        ultHud.style.cssText='position:fixed;bottom:128px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:2px;pointer-events:none;z-index:999';
-        ultHud.innerHTML='<div style="font-size:11px;font-weight:bold;color:#FF6633;letter-spacing:.12em;text-shadow:0 0 6px #FF3300">POWER SURGE</div>'
-          +'<div id="machoman-ult-bar-wrap" style="width:90px;height:6px;background:rgba(0,0,0,.5);border-radius:3px;overflow:hidden"><div id="machoman-ult-bar" style="height:100%;background:linear-gradient(90deg,#FF3300,#FF8800);border-radius:3px;transition:width .1s"></div></div>';
+        ultHud.style.cssText='position:fixed;top:18px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:3px;pointer-events:none;z-index:999';
+        ultHud.innerHTML='<div style="font-size:14px;font-weight:900;color:#FF4400;letter-spacing:.18em;text-shadow:0 0 10px #FF2200,0 0 20px #FF6600">POWER SURGE!</div>'
+          +'<div style="width:130px;height:8px;background:rgba(0,0,0,.55);border-radius:4px;overflow:hidden;border:1px solid #FF4400"><div id="machoman-ult-bar" style="height:100%;background:linear-gradient(90deg,#FF2200,#FF8800);border-radius:4px;transition:width .1s"></div></div>';
         document.body.appendChild(ultHud);
       }
       const barEl = document.getElementById('machoman-ult-bar');
@@ -11074,6 +11084,7 @@ function updatePlayer(dt){
   } else if(_heroId === 'machoman' && !player.machomanUltActive){
     if(player._machomanAura){ player.mesh.remove(player._machomanAura); player._machomanAura=null; }
     if(player._machomanAura2){ player.mesh.remove(player._machomanAura2); player._machomanAura2=null; }
+    if(player._machomanAura3){ player.mesh.remove(player._machomanAura3); player._machomanAura3=null; }
   }
 
   // ── Machoman: smooth punch lunge animation ──
@@ -12973,8 +12984,8 @@ function updateHUD(){
     }
     const charge = player.gnomeMechHitCharge||0;
     const guns = (player.gnomeMechGuns||[]).length;
-    const pipColor = charge >= 5 ? '#0f0' : '#4af';
-    const pips = [...Array(5)].map((_,i)=>`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${i<charge?pipColor:'#1a3a5c'};margin:0 1px;vertical-align:middle;box-shadow:${i<charge?'0 0 4px '+pipColor:'none'};"></span>`).join('');
+    const pipColor = charge >= 6 ? '#0f0' : '#4af';
+    const pips = [...Array(6)].map((_,i)=>`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${i<charge?pipColor:'#1a3a5c'};margin:0 1px;vertical-align:middle;box-shadow:${i<charge?'0 0 4px '+pipColor:'none'};"></span>`).join('');
     const gearSvg = `<svg width="11" height="11" viewBox="0 0 12 12" style="vertical-align:middle;margin-right:2px"><circle cx="6" cy="6" r="2.2" fill="${pipColor}"/><path d="M6 0.5v2M6 9.5v2M0.5 6h2M9.5 6h2M2.2 2.2l1.4 1.4M8.4 8.4l1.4 1.4M2.2 9.8l1.4-1.4M8.4 3.6l1.4-1.4" stroke="${pipColor}" stroke-width="1.3" stroke-linecap="round"/></svg>`;
     const gunSvg = `<svg width="14" height="10" viewBox="0 0 14 10" style="vertical-align:middle;margin:0 2px"><rect x="0" y="3.5" width="9" height="4" rx="1.2" fill="${pipColor}"/><rect x="9" y="2.5" width="5" height="2.5" rx="0.8" fill="${pipColor}"/><rect x="3" y="7.5" width="2.5" height="2.5" rx="0.6" fill="${pipColor}"/></svg>`;
     gnomeChargeEl.innerHTML = `${gearSvg}${pips} ${gunSvg}${guns}/3`;
@@ -13026,7 +13037,7 @@ function updateHUD(){
       if(!ready){
         cdOverlay.style.background=`conic-gradient(rgba(0,170,255,.0) ${deg}deg, rgba(0,0,0,.65) ${deg}deg)`;
         cdTimer.style.display='flex';
-        cdTimer.textContent=charge+'/5';
+        cdTimer.textContent=charge+'/6';
         cdTimer.style.color='#4af';
         if(skillIconEl)skillIconEl.style.opacity='0.4';
       } else {
