@@ -8509,7 +8509,7 @@ const heroAttackProfiles = {
   frost_huntress:{ melee:false, rateMulti:1.45, dmgMulti:1.25, projLife:3.2, projSpeed:22, projColor:0x06b6d4 },
   shadow_alchemist:{ melee:false, rateMulti:0.95, dmgMulti:1.1, projLife:2.2, projSpeed:13, projColor:0x16a34a, pierce:99 },
   archmage:      { melee:false, rateMulti:0.85, dmgMulti:1.2,  projLife:2.0, projSpeed:13, projColor:0x3b82f6 },
-  gnome_mech:    { melee:true,  radius:5.5, halfAng:Math.PI*0.70, rateMulti:0.55, dmgMulti:1.5,  swingColor:0xCD853F },
+  gnome_mech:    { melee:true,  radius:5.5, halfAng:Math.PI*0.70, rateMulti:3.5,  dmgMulti:1.5,  swingColor:0xCD853F },
   samurai:       { melee:true,  radius:3.2, halfAng:Math.PI*0.42, rateMulti:1.0,  dmgMulti:1.0,  swingColor:0xD4AF37 },
   machoman:      { melee:true,  radius:3.6, halfAng:Math.PI*0.22, rateMulti:0.85, dmgMulti:1.0,  swingColor:0xFF6060 },
   miner:         { melee:true,  radius:2.8, halfAng:Math.PI*0.35, rateMulti:0.9,  dmgMulti:1.0,  swingColor:0x4B8BB0 },
@@ -8930,7 +8930,7 @@ function firePlayerSpell(){
       // Charge ult by successful hits
       if(hitAny){
         if(!player.gnomeMechHitCharge) player.gnomeMechHitCharge = 0;
-        if(player.gnomeMechHitCharge < 5){
+        if(player.gnomeMechHitCharge < 6){
           player.gnomeMechHitCharge++;
           burst(player.mesh.position.clone().add(new THREE.Vector3(0,1.8,0)), 0x00CCFF, 4+player.gnomeMechHitCharge*2, 0.07, 0.35);
         }
@@ -8968,40 +8968,55 @@ function firePlayerSpell(){
         // Lunge forward
         player.mesh.position.addScaledVector(aimDir, 0.6);
       }
-      // Ult: ONE big wave per attack type
+      // Ult: ONE big curved wave per attack type
       if(player.samuraiUltTimer > 0){
         if(isWide){
-          // ONE large wide crescent wave — tall flat plane swept across the arc
-          const arcWidth = Math.sin(sHalfAng) * sRadius * 2.2;
-          const wMesh = new THREE.Mesh(
-            new THREE.BoxGeometry(arcWidth, 0.12, 0.35),
-            new THREE.MeshBasicMaterial({color:0xFFD700,transparent:true,opacity:0.90,depthWrite:false})
-          );
-          wMesh.rotation.y = aimAngle;
+          // Wide crescent wave: custom ring-sector BufferGeometry lying flat in XZ plane
+          const innerR = sRadius * 0.22;
+          const outerR = sRadius * 0.72;
+          const arcSegs = 22;
+          const wPositions = [];
+          const wIndices = [];
+          for(let wi=0; wi<=arcSegs; wi++){
+            const ang = (aimAngle - sHalfAng) + (wi/arcSegs)*sHalfAng*2;
+            wPositions.push(Math.sin(ang)*innerR, 0, Math.cos(ang)*innerR);
+            wPositions.push(Math.sin(ang)*outerR, 0, Math.cos(ang)*outerR);
+          }
+          for(let wi=0; wi<arcSegs; wi++){
+            const a=wi*2,b=a+1,c=a+2,d=a+3;
+            wIndices.push(a,b,c, b,d,c);
+          }
+          const wGeo = new THREE.BufferGeometry();
+          wGeo.setAttribute('position', new THREE.Float32BufferAttribute(wPositions,3));
+          wGeo.setIndex(wIndices);
+          const wMesh = new THREE.Mesh(wGeo, new THREE.MeshBasicMaterial({color:0xFFD700,transparent:true,opacity:0.90,depthWrite:false,side:THREE.DoubleSide}));
           wMesh.position.copy(origin).setY(1.0);
-          wMesh.position.addScaledVector(aimDir, 1.2);
           scene.add(wMesh);
           projectiles.push({
             mesh:wMesh, dir:aimDir.clone(), speed:11, damage:sDmg*0.55,
-            owner:'player', life:0.70, radius:arcWidth*0.5,
+            owner:'player', life:0.65, radius:outerR,
             trailColor:0xFFD700, trailTimer:0, remainingHits:99,
             hitEnemies:new Set(), _lockY:1.0
           });
         } else {
-          // ONE long narrow sword-beam
-          const beamLen = sRadius * 1.1;
-          const wMesh = new THREE.Mesh(
-            new THREE.BoxGeometry(0.16, 0.12, beamLen),
-            new THREE.MeshBasicMaterial({color:0xE0F8FF,transparent:true,opacity:0.95,depthWrite:false})
+          // Narrow horizontal curved wave: C-shaped tube lying flat in XZ plane
+          const perp = new THREE.Vector3(-aimDir.z, 0, aimDir.x);
+          const depth = sRadius * 0.88;
+          const curve = new THREE.CatmullRomCurve3([
+            new THREE.Vector3(0,0,0).addScaledVector(perp, -sRadius*0.28),
+            new THREE.Vector3(0,0,0).addScaledVector(aimDir, depth*0.45).addScaledVector(perp, sRadius*0.10),
+            new THREE.Vector3(0,0,0).addScaledVector(aimDir, depth).addScaledVector(perp, sRadius*0.28),
+          ]);
+          const tubeMesh = new THREE.Mesh(
+            new THREE.TubeGeometry(curve, 18, 0.13, 4, false),
+            new THREE.MeshBasicMaterial({color:0xC8ECFF,transparent:true,opacity:0.94,depthWrite:false,side:THREE.DoubleSide})
           );
-          wMesh.rotation.y = aimAngle;
-          wMesh.position.copy(origin).setY(1.0);
-          wMesh.position.addScaledVector(aimDir, beamLen*0.5);
-          scene.add(wMesh);
+          tubeMesh.position.copy(origin).setY(1.0);
+          scene.add(tubeMesh);
           projectiles.push({
-            mesh:wMesh, dir:aimDir.clone(), speed:20, damage:sDmg*0.70,
-            owner:'player', life:0.80, radius:0.22,
-            trailColor:0xE0F8FF, trailTimer:0, remainingHits:99,
+            mesh:tubeMesh, dir:aimDir.clone(), speed:20, damage:sDmg*0.70,
+            owner:'player', life:0.75, radius:depth*0.55,
+            trailColor:0xC8ECFF, trailTimer:0, remainingHits:99,
             hitEnemies:new Set(), _lockY:1.0
           });
         }
@@ -10254,7 +10269,7 @@ function useHeroSkill(dir){
   if(!player.alive||pausedForUpgrade) return;
   const _skillHeroId = player.heroId || settings.hero;
   if(_skillHeroId === 'gnome_mech'){
-    if((player.gnomeMechHitCharge||0) < 5) return;
+    if((player.gnomeMechHitCharge||0) < 6) return;
   } else {
     if(player.activeSkillCooldown>0) return;
   }
@@ -11307,14 +11322,34 @@ function updatePlayer(dt){
     worldAttack.applyAxisAngle(new THREE.Vector3(0,1,0),cameraAngle);
     player.aim.copy(worldAttack).normalize();
   }
+  // Самурай: показываем индикатор текущей атаки пока целимся
+  if((player.heroId||settings.hero)==='samurai'){
+    let samInd = document.getElementById('samurai-attack-indicator');
+    if(attackMag>.04 && !dashAim.active){
+      if(!samInd){
+        samInd = document.createElement('div');
+        samInd.id = 'samurai-attack-indicator';
+        samInd.style.cssText='position:fixed;bottom:130px;left:50%;transform:translateX(-50%);padding:4px 14px;border-radius:8px;font-size:13px;font-weight:bold;letter-spacing:.12em;pointer-events:none;z-index:999;transition:opacity .15s';
+        document.body.appendChild(samInd);
+      }
+      const nextIsWide = ((player.samuraiStrikeIdx||0) % 2 === 0);
+      if(nextIsWide){
+        samInd.textContent = '--- ШИРОКАЯ ---';
+        samInd.style.cssText = samInd.style.cssText.replace(/color:[^;]+/,'');
+        samInd.style.background='rgba(180,140,0,.82)'; samInd.style.color='#FFE87A'; samInd.style.opacity='1';
+      } else {
+        samInd.textContent = '>>> ДЛИННАЯ >>>';
+        samInd.style.background='rgba(180,220,255,.18)'; samInd.style.color='#C8ECFF'; samInd.style.opacity='1';
+      }
+    } else if(samInd){ samInd.style.opacity='0'; }
+  } else {
+    const samInd = document.getElementById('samurai-attack-indicator');
+    if(samInd) samInd.remove();
+  }
   // Выстрел только при отпускании
   if(attackInput.released&&!dashAim.active&&!pausedForUpgrade){
     attackInput.released=false;
     if(!player.charging) firePlayerSpell(); // не стрелять обычной атакой во время заряда
-  }
-  // Гном: авто-стрельба пока зажата кнопка атаки (использует все 4 патрона)
-  if((player.heroId||settings.hero)==='gnome_mech' && attackMag>.04 && !dashAim.active && !pausedForUpgrade){
-    firePlayerSpell();
   }
   if(dashAim.active){
     const v=new THREE.Vector3(dashAim.x,0,dashAim.y);
@@ -11880,7 +11915,13 @@ function updateProjectiles(arr,dt,hitEnemy){
     if(p.trailTimer<=0){createTrail(p.mesh.position.clone(),p.trailColor,p.owner==='player'?.12:.1);p.trailTimer=.03;}
     if(p.life<=0||Math.hypot(p.mesh.position.x,p.mesh.position.z)>ARENA_RADIUS+3){scene.remove(p.mesh);arr.splice(i,1);continue;}
     let hitObs=false;
-    for(const o of obstacles){if(distanceXZ(p.mesh.position,o.mesh.position)<p.radius+o.radius){burst(p.mesh.position.clone(),p.trailColor,7,.06,.3);scene.remove(p.mesh);arr.splice(i,1);hitObs=true;break;}}
+    for(const o of obstacles){
+      if(distanceXZ(p.mesh.position,o.mesh.position)<p.radius+o.radius){
+        // Snowball only breaks on large obstacles (trees/big rocks), not small ones
+        if(p._snowball && o.radius < 0.65) continue;
+        burst(p.mesh.position.clone(),p.trailColor,7,.06,.3);scene.remove(p.mesh);arr.splice(i,1);hitObs=true;break;
+      }
+    }
     if(hitObs)continue;
     if(hitEnemy){
       for(let j=enemies.length-1;j>=0;j--){
@@ -12882,10 +12923,10 @@ function updateHUD(){
   if(cdOverlay&&cdTimer){
     const _isGnomeHud = (player.heroId||settings.hero) === 'gnome_mech';
     if(_isGnomeHud){
-      // Gnome: show hit charge progress (0-5) as fill
+      // Gnome: show hit charge progress (0-6) as fill
       const charge = player.gnomeMechHitCharge||0;
-      const ready = charge >= 5;
-      const pct = charge/5;
+      const ready = charge >= 6;
+      const pct = charge/6;
       const deg = Math.round(pct*360);
       if(!ready){
         cdOverlay.style.background=`conic-gradient(rgba(0,170,255,.0) ${deg}deg, rgba(0,0,0,.65) ${deg}deg)`;
