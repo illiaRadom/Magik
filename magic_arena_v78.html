@@ -2359,6 +2359,14 @@ window.createMachoman = function () {
   // Collarbones visible
   torsoG.add(_at(_B(.28,.05,.05,mSkinL), -.22,.72,.20));
   torsoG.add(_at(_B(.28,.05,.05,mSkinL),  .22,.72,.20));
+  // BACK MUSCLES (visible from behind)
+  torsoG.add(_at(_B(.26,.44,.10,mSkin),  -.18,.28,-.23)); // L lat
+  torsoG.add(_at(_B(.26,.44,.10,mSkin),   .18,.28,-.23)); // R lat
+  torsoG.add(_at(_B(.16,.50,.08,mSkinL),   0,.30,-.24)); // spine ridge
+  torsoG.add(_at(_O(.18,mSkin), -.24,.54,-.20));          // L rear shoulder cap
+  torsoG.add(_at(_O(.18,mSkin),  .24,.54,-.20));          // R rear shoulder cap
+  // Trapezius ridge
+  torsoG.add(_at(_B(.50,.12,.07,mSkin),  0,.70,-.22));
 
   const aL = _buildArmV3(mSkin,mSkin,mSkinL,mSkin,mSkinL,mSkin, .54,.46, false,false);
   aL.shoulderG.position.set(-.66,.64,0);
@@ -2720,13 +2728,13 @@ window.createRobot = function () {
   const mMet   = _m(0x9A9A9A, .30, .66);
   const mRivet = _m(0xBB8844, .28, .70);
 
-  const legL = _buildLegV3(mRust,mPanel,mBrass,mDark,mMet, .30,.48,.42,.24);
-  const legR = _buildLegV3(mRust,mPanel,mBrass,mDark,mMet, .30,.48,.42,.24);
+  const legL = _buildLegV3(mRust,mPanel,mBrass,mDark,mMet, .28,.38,.32,.20);
+  const legR = _buildLegV3(mRust,mPanel,mBrass,mDark,mMet, .28,.38,.32,.20);
   legL.position.set(-.26,0,0); root.add(legL);
   legR.position.set( .26,0,0); root.add(legR);
   // Knee servo details
-  legL.add(_at(_C(.10,.10,.06,4,mBrass), 0,-.50,.0));
-  legR.add(_at(_C(.10,.10,.06,4,mBrass), 0,-.50,.0));
+  legL.add(_at(_C(.10,.10,.06,4,mBrass), 0,-.40,.0));
+  legR.add(_at(_C(.10,.10,.06,4,mBrass), 0,-.40,.0));
 
   const pelvisG = new THREE.Group(); pelvisG.position.set(0,0,0); root.add(pelvisG);
   pelvisG.add(_at(_B(.70,.28,.52,mRust), 0,.14,0));
@@ -2785,7 +2793,7 @@ window.createRobot = function () {
 
   // BIG SQUARE HEAD — sitting closer to shoulders
   const headG = new THREE.Group();
-  headG.position.set(0,.22,0); neckG.add(headG); // lower offset
+  headG.position.set(0,.10,0); neckG.add(headG); // lower offset
   headG.add(_at(_B(.58,.52,.54,mRust),    0,.26,0));
   headG.add(_at(_B(.54,.48,.11,mPanel),   0,.25,.29));
   headG.add(_at(_B(.46,.14,.062,mVisor),   0,.27,.33));
@@ -6515,7 +6523,7 @@ scene.add(dashMarker);
   const machoRectGrp = new THREE.Group();
   (function(){
     // Filled flat rectangle
-    const rW = 3.6 * 1.1, rD = 3.6 * 0.85;
+    const rW = 1.4, rD = 1.2;
     const rFill = new THREE.Mesh(
       new THREE.PlaneGeometry(rW, rD),
       new THREE.MeshBasicMaterial({color:0xFF6060,transparent:true,opacity:0.18,depthWrite:false,side:THREE.DoubleSide})
@@ -8995,29 +9003,24 @@ function firePlayerSpell(){
       const sCol     = 0xFFD700;                                  // both gold
       const hitAny = _doMeleeArc(sRadius, sHalfAng, aimAngle, sDmg, sCol);
       if(isWide){
-        // Wide golden fan swash
-        createSwashEffect(new THREE.Vector3(origin.x,1.0,origin.z), aimAngle, sHalfAng, sRadius*0.90, 0xD4AF37);
-        burst(origin.clone().add(new THREE.Vector3(aimDir.x*1.5,1.0,aimDir.z*1.5)), 0xD4AF37, hitAny?16:8, 0.10, 0.55);
-        burst(origin.clone().add(new THREE.Vector3(aimDir.x*1.5,1.0,aimDir.z*1.5)), 0xFFFFCC, hitAny?8:4, 0.06, 0.35);
+        // Wide golden fan swash — small clean arc flash
+        createSwashEffect(new THREE.Vector3(origin.x,1.0,origin.z), aimAngle, sHalfAng, sRadius*0.80, 0xD4AF37);
+        burst(origin.clone().add(new THREE.Vector3(aimDir.x*1.2,1.0,aimDir.z*1.2)), 0xD4AF37, hitAny?8:4, 0.08, 0.40);
+        burst(origin.clone().add(new THREE.Vector3(aimDir.x*1.2,1.0,aimDir.z*1.2)), 0xFFFFCC, hitAny?4:2, 0.05, 0.25);
       } else {
-        // Narrow gold thrust — wide flat RECTANGULAR blade that fills the whole attack zone
-        const thrustFront = origin.clone().add(new THREE.Vector3(aimDir.x*sRadius*0.6,1.0,aimDir.z*sRadius*0.6));
-        // Two overlapping rectangles for a clear visible blade flash
-        const thrustW = sRadius * 1.35; // very wide
-        const thrustD = sRadius * 1.45; // long depth
-        for(let ti=0; ti<2; ti++){
-          const tm = new THREE.Mesh(
-            new THREE.BoxGeometry(thrustW - ti*0.15, 0.06 + ti*0.06, thrustD - ti*0.10),
-            new THREE.MeshBasicMaterial({color: ti===0 ? 0xFFD700 : 0xFFEE55, transparent:true, opacity:0.80 - ti*0.20, depthWrite:false})
-          );
-          tm.rotation.y = aimAngle;
-          tm.position.copy(origin).setY(1.0).addScaledVector(aimDir, sRadius*0.55);
-          scene.add(tm);
-          const _tm = tm;
-          setTimeout(()=>{ scene.remove(_tm); _tm.geometry.dispose(); _tm.material.dispose(); }, 220);
-        }
-        burst(thrustFront, 0xFFD700, hitAny?22:11, 0.10, 0.54);
-        burst(thrustFront, 0xFFFFAA, hitAny?12:6,  0.07, 0.32);
+        // Narrow gold thrust — thin golden line flash (not a huge box)
+        const thrustFront = origin.clone().add(new THREE.Vector3(aimDir.x*sRadius*0.65,1.0,aimDir.z*sRadius*0.65));
+        const thrustMesh = new THREE.Mesh(
+          new THREE.BoxGeometry(0.18, 0.08, sRadius * 1.1),
+          new THREE.MeshBasicMaterial({color:0xFFD700, transparent:true, opacity:0.85, depthWrite:false})
+        );
+        thrustMesh.rotation.y = aimAngle;
+        thrustMesh.position.copy(origin).setY(1.0).addScaledVector(aimDir, sRadius*0.55);
+        scene.add(thrustMesh);
+        const _tm = thrustMesh;
+        setTimeout(()=>{ scene.remove(_tm); _tm.geometry.dispose(); _tm.material.dispose(); }, 160);
+        burst(thrustFront, 0xFFD700, hitAny?10:5, 0.08, 0.40);
+        burst(thrustFront, 0xFFFFAA, hitAny?5:2,  0.05, 0.25);
         // Short lunge forward
         player.mesh.position.addScaledVector(aimDir, 0.6);
       }
@@ -9054,19 +9057,30 @@ function firePlayerSpell(){
             hitEnemies:new Set(), _lockY:1.0, _xzHit:true
           });
         } else {
-          // Narrow thrust wave: flat wide rectangle traveling fast in aim direction
-          const depth = sRadius * 1.0;
-          const waveW = sRadius * 1.20;
-          const wMesh = new THREE.Mesh(
-            new THREE.BoxGeometry(waveW, 0.10, depth),
-            new THREE.MeshBasicMaterial({color:0xFFD700,transparent:true,opacity:0.90,depthWrite:false,side:THREE.DoubleSide})
-          );
-          wMesh.rotation.y = aimAngle;
-          wMesh.position.copy(origin).setY(1.0).addScaledVector(aimDir, depth * 0.5);
-          scene.add(wMesh);
+          // Narrow thrust wave: thin crescent arc (not a box)
+          const innerR2 = sRadius * 0.35;
+          const outerR2 = sRadius * 0.85;
+          const arcSegs2 = 16;
+          const w2Pos = [], w2Idx = [];
+          for(let wi=0; wi<=arcSegs2; wi++){
+            const _a = -sHalfAng + (wi/arcSegs2)*sHalfAng*2;
+            w2Pos.push(Math.sin(_a)*innerR2, 0, Math.cos(_a)*innerR2);
+            w2Pos.push(Math.sin(_a)*outerR2, 0, Math.cos(_a)*outerR2);
+          }
+          for(let wi=0; wi<arcSegs2; wi++){
+            const a=wi*2,b=a+1,c=a+2,d=a+3;
+            w2Idx.push(a,b,c, b,d,c);
+          }
+          const w2Geo = new THREE.BufferGeometry();
+          w2Geo.setAttribute('position', new THREE.Float32BufferAttribute(w2Pos,3));
+          w2Geo.setIndex(w2Idx);
+          const wMesh2 = new THREE.Mesh(w2Geo, new THREE.MeshBasicMaterial({color:0xFFD700,transparent:true,opacity:0.90,depthWrite:false,side:THREE.DoubleSide}));
+          wMesh2.position.copy(origin).setY(1.0);
+          wMesh2.rotation.y = aimAngle;
+          scene.add(wMesh2);
           projectiles.push({
-            mesh:wMesh, dir:aimDir.clone(), speed:22, damage:sDmg*0.70,
-            owner:'player', life:0.70, radius:waveW * 0.5,
+            mesh:wMesh2, dir:aimDir.clone(), speed:22, damage:sDmg*0.70,
+            owner:'player', life:0.65, radius:outerR2,
             trailColor:0xFFD700, trailTimer:0, remainingHits:99,
             hitEnemies:new Set(), _lockY:1.0, _xzHit:true
           });
@@ -9080,23 +9094,22 @@ function firePlayerSpell(){
       const actR    = r * multR;
       const actHalf = halfAng;
       const hitAny  = _doMeleeArc(actR, actHalf, aimAngle, dmg, col);
-      // Rectangular flash in front (wide flat box)
-      const rectW = actR * 1.1;
-      const rectD = actR * 0.85;
-      for(let ri=0; ri<2; ri++){
-        const rm = new THREE.Mesh(
-          new THREE.BoxGeometry(rectW - ri*0.12, 0.07 + ri*0.05, rectD - ri*0.10),
-          new THREE.MeshBasicMaterial({color: ri===0 ? 0xFF6060 : 0xFFAAAA, transparent:true, opacity:0.78 - ri*0.22, depthWrite:false})
-        );
-        rm.rotation.y = aimAngle;
-        rm.position.copy(origin).setY(1.0).addScaledVector(aimDir, actR*0.48);
-        scene.add(rm);
-        const _rm = rm;
-        setTimeout(()=>{ scene.remove(_rm); _rm.geometry.dispose(); _rm.material.dispose(); }, 180);
-      }
-      const sw = origin.clone().add(new THREE.Vector3(aimDir.x*2.0,1.0,aimDir.z*2.0));
-      burst(sw, 0xFF6060, hitAny?14:7, 0.10, 0.55);
-      burst(sw, 0xFFFFFF, hitAny?6:3,  0.07, 0.35);
+      // Rectangular flash in front — compact punch flash (not oversized)
+      const baseR = player.machomanUltActive ? 1.5 : 1.0; // already in actR
+      const rectW = 1.4 * baseR;  // fixed small width
+      const rectD = 1.2 * baseR;
+      const rm = new THREE.Mesh(
+        new THREE.BoxGeometry(rectW, 0.08, rectD),
+        new THREE.MeshBasicMaterial({color:0xFF4444, transparent:true, opacity:0.82, depthWrite:false})
+      );
+      rm.rotation.y = aimAngle;
+      rm.position.copy(origin).setY(1.0).addScaledVector(aimDir, 1.0 + rectD*0.5);
+      scene.add(rm);
+      const _rm = rm;
+      setTimeout(()=>{ scene.remove(_rm); _rm.geometry.dispose(); _rm.material.dispose(); }, 150);
+      const sw = origin.clone().add(new THREE.Vector3(aimDir.x*1.6,1.0,aimDir.z*1.6));
+      burst(sw, 0xFF5050, hitAny?8:4, 0.08, 0.40);
+      burst(sw, 0xFFFFFF, hitAny?4:2, 0.06, 0.25);
       // Forward dash (smooth animated lunge, not instant teleport)
       const lungeDist = player.machomanUltActive ? 2.2 : 1.4;
       if(!player._machomanLunge) player._machomanLunge = {active:false, dir:new THREE.Vector3(), time:0, duration:0.12, dist:0, traveled:0};
@@ -9304,23 +9317,43 @@ function firePlayerSpell(){
 
     } else if(heroId === 'robot'){
       if(player.robotUltActive){
-        // Rocket projectile
-        const rocketGeo=new THREE.CylinderGeometry(0.10,0.18,0.5,8);
-        const rocketMesh=new THREE.Mesh(rocketGeo,new THREE.MeshBasicMaterial({color:0xFF4400}));
-        rocketMesh.position.copy(muzzle);
-        scene.add(rocketMesh);
-        projectiles.push({mesh:rocketMesh,dir:aimDir.clone(),speed:10,damage:dmg*1.5,owner:'player',life:2.0,radius:0.25,trailColor:0xFF4400,trailTimer:0,remainingHits:1,_isRocket:true,_spin:true});
-        burst(muzzle,0xFF4400,10,0.09,0.50);
+        // Rocket projectile — longer body + nose cone group
+        const rocketGrp = new THREE.Group();
+        const rBodyGeo = new THREE.CylinderGeometry(0.12, 0.16, 0.6, 8);
+        const rNoseGeo = new THREE.ConeGeometry(0.12, 0.22, 8);
+        const rFinGeo  = new THREE.BoxGeometry(0.28, 0.08, 0.12);
+        const rBodyMesh = new THREE.Mesh(rBodyGeo, new THREE.MeshBasicMaterial({color:0xCC3300}));
+        const rNoseMesh = new THREE.Mesh(rNoseGeo, new THREE.MeshBasicMaterial({color:0xFF5500}));
+        const rFinL = new THREE.Mesh(rFinGeo, new THREE.MeshBasicMaterial({color:0x884400}));
+        const rFinR = rFinL.clone();
+        rNoseMesh.position.y = 0.41;
+        rFinL.position.set(0, -0.28, 0.0); rFinL.rotation.z = 0.4;
+        rFinR.position.set(0, -0.28, 0.0); rFinR.rotation.z = -0.4;
+        rocketGrp.add(rBodyMesh, rNoseMesh, rFinL, rFinR);
+        rocketGrp.position.copy(muzzle);
+        // Orient along aim
+        rocketGrp.rotation.z = Math.PI/2;
+        rocketGrp.rotation.y = aimAngle;
+        scene.add(rocketGrp);
+        projectiles.push({mesh:rocketGrp,dir:aimDir.clone(),speed:12,damage:dmg*1.8,owner:'player',life:2.0,radius:0.28,trailColor:0xFF5500,trailTimer:0,remainingHits:1,_isRocket:true,_spin:false});
+        burst(muzzle,0xFF5500,14,0.10,0.55);
+        burst(muzzle,0xFFAA00,6,0.07,0.35);
       } else {
-        // Nut/bolt (hexagonal prism)
+        // Nut/bolt (hexagonal prism) — improved with washer ring + metallic burst
         const isHoming=Math.random()<0.10;
-        const nutGeo=new THREE.CylinderGeometry(0.12,0.12,0.18,6);
-        const nutMesh=new THREE.Mesh(nutGeo,new THREE.MeshBasicMaterial({color:0xAAAAAA}));
-        nutMesh.position.copy(muzzle);
-        scene.add(nutMesh);
-        projectiles.push({mesh:nutMesh,dir:aimDir.clone(),speed:isHoming?8:18,damage:dmg,owner:'player',life:pLife,radius:0.20,trailColor:0xAAAAAA,trailTimer:0,remainingHits:1,_spin:true,_homing:isHoming});
-        if(isHoming)burst(muzzle,0xFFFFFF,8,0.08,0.40);
-        else burst(muzzle,0x888888,5,0.06,0.30);
+        const nutGrp = new THREE.Group();
+        const nutGeo = new THREE.CylinderGeometry(0.13,0.13,0.16,6);
+        const nutMeshInner = new THREE.Mesh(nutGeo, new THREE.MeshBasicMaterial({color:0xBBBBBB}));
+        const holeGeo = new THREE.CylinderGeometry(0.055,0.055,0.20,8);
+        const holeMesh = new THREE.Mesh(holeGeo, new THREE.MeshBasicMaterial({color:0x222222}));
+        const washerGeo = new THREE.CylinderGeometry(0.17,0.17,0.04,12);
+        const washerMesh = new THREE.Mesh(washerGeo, new THREE.MeshBasicMaterial({color:0x888888}));
+        nutGrp.add(nutMeshInner, holeMesh, washerMesh);
+        nutGrp.position.copy(muzzle);
+        scene.add(nutGrp);
+        projectiles.push({mesh:nutGrp,dir:aimDir.clone(),speed:isHoming?8:20,damage:dmg,owner:'player',life:pLife,radius:0.22,trailColor:0xCCCCCC,trailTimer:0,remainingHits:1,_spin:true,_homing:isHoming});
+        if(isHoming){ burst(muzzle,0xCCEEFF,10,0.08,0.40); burst(muzzle,0xFFFFFF,5,0.06,0.25); }
+        else { burst(muzzle,0x999999,6,0.07,0.32); }
         // Accumulate ult charges
         if(!player.madSciCharges) player.robotUltCharges=(player.robotUltCharges||0);
       }
@@ -10124,8 +10157,9 @@ function _updateBombArcVisual(){
   const pts = _buildBombArcPoints(from, to, arcH, 28);
   const geo = new THREE.BufferGeometry().setFromPoints(pts);
 
-  // Фиолетовый цвет
-  const mat = new THREE.LineBasicMaterial({color:0x9d4edd, linewidth:2, transparent:true, opacity:0.9});
+  // Arc color: gold for leprechaun, purple for alchemist
+  const arcLineColor = (player.heroId === 'leprechaun') ? 0xFFD700 : 0x9d4edd;
+  const mat = new THREE.LineBasicMaterial({color:arcLineColor, linewidth:2, transparent:true, opacity:0.9});
   player._bombArcLine = new THREE.Line(geo, mat);
   scene.add(player._bombArcLine);
 
@@ -10133,7 +10167,7 @@ function _updateBombArcVisual(){
   if(player.bombTarget){
     player.bombTarget.position.copy(to);
     player.bombTarget.position.y = 0.08;
-    player.bombTarget.material.color.setHex(0x9d4edd);
+    player.bombTarget.material.color.setHex(arcLineColor);
   }
 }
 
@@ -10188,6 +10222,73 @@ function releaseBombThrow(dirVec, power){
   };
   flyFlask();
   burst(startPos, 0x4ade80, 14, 0.1, 0.5);
+  player.activeSkillCooldown = heroData().skillCd;
+}
+
+function releaseLeprechaunBag(dirVec, power){
+  if(!player.bombAiming) return;
+  player.bombAiming = false;
+  if(player.bombTarget){ scene.remove(player.bombTarget); player.bombTarget=null; }
+  if(player._bombArcLine){ scene.remove(player._bombArcLine); player._bombArcLine=null; }
+  player._bombAimDir = null;
+
+  const minDist=2, maxDist=10;
+  const dist = minDist + power*(maxDist-minDist);
+  const dir = dirVec.clone().normalize();
+  const target = player.mesh.position.clone().add(dir.clone().multiplyScalar(dist));
+  target.y = 0;
+  const arcH = 3.5;
+  const startPos = player.mesh.position.clone().add(new THREE.Vector3(0,1.3,0));
+  const rainbowBonus = player.luckRainbow ? 1.5 : 1.0;
+  player.luckRainbow = false;
+
+  // Flying bag with glow + spinning golden coin trail
+  const bagGeo = new THREE.SphereGeometry(0.38, 10, 10);
+  const bagMat = new THREE.MeshBasicMaterial({color:0x8B6914});
+  const bag = new THREE.Mesh(bagGeo, bagMat);
+  bag.position.copy(startPos);
+  scene.add(bag);
+
+  let t=0;
+  const flyBag = ()=>{
+    t += 0.020;
+    const tt = Math.min(t,1);
+    bag.position.lerpVectors(startPos, target, tt);
+    bag.position.y += Math.sin(tt*Math.PI)*arcH;
+    bag.rotation.x += 0.18; bag.rotation.z += 0.12;
+    // Gold sparkle trail
+    if(Math.random()<0.5){
+      const trailPt = bag.position.clone().add(new THREE.Vector3((Math.random()-.5)*.3,0,(Math.random()-.5)*.3));
+      burst(trailPt, Math.random()<0.5?0xFFD700:0xFF8C00, 2, 0.05, 0.20);
+    }
+    if(t<1){ requestAnimationFrame(flyBag); }
+    else {
+      scene.remove(bag);
+      // Big explosion at landing
+      const KNOCK_R = 5.5;
+      for(const ke of enemies){
+        const kd = distanceXZ(ke.mesh.position, target);
+        if(kd < KNOCK_R){
+          const kDir = ke.mesh.position.clone().sub(target).setY(0);
+          if(kDir.lengthSq()>0.0001) kDir.normalize();
+          ke.mesh.position.addScaledVector(kDir, 5.0*rainbowBonus);
+          ke.hp -= player.damage * 4.0 * rainbowBonus * (1 - kd/KNOCK_R*0.5);
+          ke.hitFlash = 1;
+          if(ke.hp<=0){ const idx=enemies.indexOf(ke); if(idx>=0) killEnemyAt(idx); }
+        }
+      }
+      burst(target.clone().add(new THREE.Vector3(0,0.5,0)),0xFFD700,28,0.13,1.0);
+      burst(target.clone().add(new THREE.Vector3(0,0.5,0)),0xFF8C00,14,0.10,0.7);
+      const coinCount = rainbowBonus > 1.0 ? 10 : 5;
+      for(let ci=0;ci<coinCount;ci++){
+        const cAngle=Math.random()*Math.PI*2;
+        const cDir=new THREE.Vector3(Math.sin(cAngle),0,Math.cos(cAngle)).normalize();
+        createProjectile(target.clone().add(new THREE.Vector3(0,0.5,0)),cDir,'player',{size:0.24,color:0xFFD700,speed:8,damage:player.damage,life:1.2,remainingHits:1});
+      }
+    }
+  };
+  flyBag();
+  burst(startPos, 0xFFD700, 14, 0.10, 0.6);
   player.activeSkillCooldown = heroData().skillCd;
 }
 
@@ -10490,14 +10591,21 @@ function useHeroSkill(dir){
     player.activeSkillCooldown = hero.skillCd;
     player.robotShield = 100;
     player.robotUltActive = true;
-    // Visual indicator — blue shield ring
+    // Visual indicator — transparent sphere shield
     if(player.robotShieldMesh) player.mesh.remove(player.robotShieldMesh);
-    const shieldGeo = new THREE.TorusGeometry(1.4,0.12,8,32);
-    const shieldMat = new THREE.MeshBasicMaterial({color:0x00AAFF,transparent:true,opacity:0.5,depthWrite:false});
+    const shieldGeo = new THREE.SphereGeometry(1.3, 20, 16);
+    const shieldMat = new THREE.MeshBasicMaterial({color:0x00AAFF,transparent:true,opacity:0.22,depthWrite:false,side:THREE.DoubleSide,wireframe:false});
     player.robotShieldMesh = new THREE.Mesh(shieldGeo, shieldMat);
-    player.robotShieldMesh.rotation.x = Math.PI/2;
+    player.robotShieldMesh.position.set(0, 0.9, 0); // center on body
     player.mesh.add(player.robotShieldMesh);
-    burst(player.mesh.position.clone().add(new THREE.Vector3(0,1.2,0)), 0x00AAFF, 20, 0.12, 0.8);
+    // Outer ring outline for clear visibility
+    const ringGeo = new THREE.TorusGeometry(1.3,0.04,8,40);
+    const ringMat = new THREE.MeshBasicMaterial({color:0x44DDFF,transparent:true,opacity:0.85,depthWrite:false});
+    player.robotShieldRing = new THREE.Mesh(ringGeo, ringMat);
+    player.robotShieldRing.rotation.x = Math.PI/2;
+    player.robotShieldRing.position.set(0,0.9,0);
+    player.mesh.add(player.robotShieldRing);
+    burst(player.mesh.position.clone().add(new THREE.Vector3(0,1.2,0)), 0x00AAFF, 24, 0.12, 0.9);
     return;
   }
 
@@ -10937,7 +11045,8 @@ function damagePlayer(amount){
     if(player.robotShield <= 0){
       player.robotUltActive = false;
       if(player.robotShieldMesh){ player.mesh.remove(player.robotShieldMesh); player.robotShieldMesh = null; }
-      burst(player.mesh.position.clone().add(new THREE.Vector3(0,1.2,0)), 0x00AAFF, 12, 0.10, 0.5);
+      if(player.robotShieldRing){ player.mesh.remove(player.robotShieldRing); player.robotShieldRing = null; }
+      burst(player.mesh.position.clone().add(new THREE.Vector3(0,1.2,0)), 0x00AAFF, 16, 0.10, 0.6);
     }
     if(amount <= 0) return;
   }
@@ -11060,7 +11169,7 @@ function updatePlayer(dt){
       if(player.samuraiUltTimer <= 0){
         player.samuraiUltTimer = 0;
         // Remove aura on ult end
-        if(player._samuraiAura){ scene.remove(player._samuraiAura); player._samuraiAura = null; }
+        if(player._samuraiAura){ player.mesh.remove(player._samuraiAura); scene.remove(player._samuraiAura); player._samuraiAura = null; }
       } else {
         // Spawn/maintain golden aura ring
         if(!player._samuraiAura){
@@ -11130,14 +11239,14 @@ function updatePlayer(dt){
         const sp = player.mesh.position.clone().add(new THREE.Vector3((Math.random()-.5)*1.4, 0.4+Math.random()*1.6, (Math.random()-.5)*1.4));
         burst(sp, Math.random()<0.5 ? 0xFF3300 : 0xFF8800, 5, 0.08, 0.35);
       }
-      // HUD: prominent label above HP bar area (top-left)
+      // Small ult timer bar near HP (bottom-left), no top strip
       let ultHud = document.getElementById('machoman-ult-hud');
       if(!ultHud){
         ultHud = document.createElement('div');
         ultHud.id = 'machoman-ult-hud';
-        ultHud.style.cssText='position:fixed;top:18px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:3px;pointer-events:none;z-index:999';
-        ultHud.innerHTML='<div style="font-size:14px;font-weight:900;color:#FF4400;letter-spacing:.18em;text-shadow:0 0 10px #FF2200,0 0 20px #FF6600">POWER SURGE!</div>'
-          +'<div style="width:130px;height:8px;background:rgba(0,0,0,.55);border-radius:4px;overflow:hidden;border:1px solid #FF4400"><div id="machoman-ult-bar" style="height:100%;background:linear-gradient(90deg,#FF2200,#FF8800);border-radius:4px;transition:width .1s"></div></div>';
+        ultHud.style.cssText='position:fixed;bottom:90px;left:12px;display:flex;align-items:center;gap:5px;pointer-events:none;z-index:999';
+        ultHud.innerHTML='<div style="font-size:9px;font-weight:900;color:#FF5500;letter-spacing:.10em;text-shadow:0 0 6px #FF2200">SURGE</div>'
+          +'<div style="width:70px;height:6px;background:rgba(0,0,0,.55);border-radius:3px;overflow:hidden;border:1px solid #FF4400"><div id="machoman-ult-bar" style="height:100%;background:linear-gradient(90deg,#FF2200,#FF8800);border-radius:3px;transition:width .1s"></div></div>';
         document.body.appendChild(ultHud);
       }
       const barEl = document.getElementById('machoman-ult-bar');
@@ -11147,6 +11256,16 @@ function updatePlayer(dt){
     if(player._machomanAura){ player.mesh.remove(player._machomanAura); player._machomanAura=null; }
     if(player._machomanAura2){ player.mesh.remove(player._machomanAura2); player._machomanAura2=null; }
     if(player._machomanAura3){ player.mesh.remove(player._machomanAura3); player._machomanAura3=null; }
+  }
+
+  // ── Robot: pulse transparent shield ──
+  if(_heroId === 'robot' && player.robotUltActive && player.robotShieldMesh){
+    const _st = Date.now() * 0.003;
+    player.robotShieldMesh.material.opacity = 0.14 + Math.sin(_st*2.2)*0.10;
+    if(player.robotShieldRing){
+      player.robotShieldRing.material.opacity = 0.60 + Math.sin(_st*3)*0.30;
+      player.robotShieldRing.rotation.z = _st * 0.8;
+    }
   }
 
   // ── Machoman: smooth punch lunge animation ──
@@ -11184,17 +11303,19 @@ function updatePlayer(dt){
     if(!mhud){
       mhud = document.createElement('div');
       mhud.id = 'miner-rock-hud';
-      mhud.style.cssText = 'position:fixed;top:54px;left:12px;display:flex;align-items:center;gap:5px;pointer-events:none;z-index:999;font-family:sans-serif';
+      mhud.style.cssText = 'position:fixed;bottom:90px;left:12px;display:flex;align-items:center;gap:6px;pointer-events:none;z-index:999;font-family:sans-serif;background:rgba(0,0,0,.45);padding:3px 7px;border-radius:8px;border:1px solid rgba(255,255,255,.10)';
       document.body.appendChild(mhud);
     }
     const rocks = player.minerRocks || 0;
-    const modeLabel = player.minerRockMode
-      ? '<span style="color:#8B7355;font-size:10px;font-weight:bold;text-shadow:0 0 4px #8B7355">ROCK</span>'
-      : '<span style="color:#4B8BB0;font-size:10px;font-weight:bold;text-shadow:0 0 4px #4B8BB0">MELEE</span>';
-    const rockIcons = rocks > 0
-      ? `<span style="color:#A0856A;font-size:12px;font-weight:bold;text-shadow:0 1px 3px #000">🪨 ${rocks}</span>`
-      : `<span style="color:#555;font-size:11px">🪨 0</span>`;
-    mhud.innerHTML = modeLabel + rockIcons;
+    const isRock = player.minerRockMode;
+    // SVG rock icon
+    const rockSvg = `<svg width="14" height="14" viewBox="0 0 14 14" style="vertical-align:middle"><polygon points="7,1 13,5 11,13 3,13 1,5" fill="${rocks>0?'#9A8070':'#444'}" stroke="${rocks>0?'#C4A880':'#333'}" stroke-width="0.8"/><polygon points="7,2 11,5.5 9.5,12 4.5,12 2.5,5.5" fill="${rocks>0?'#B09878':'#555'}" opacity="0.5"/></svg>`;
+    // Mode badge
+    const modeBadge = isRock
+      ? `<span style="font-size:9px;font-weight:900;color:#C4A880;letter-spacing:.06em;text-shadow:0 0 5px #8B6040">ROCK</span>`
+      : `<span style="font-size:9px;font-weight:900;color:#6AACCC;letter-spacing:.06em;text-shadow:0 0 5px #336688">PICK</span>`;
+    const countLabel = `<span style="font-size:12px;font-weight:bold;color:${rocks>0?'#D4B890':'#555'};min-width:18px;text-align:right;text-shadow:0 1px 3px #000">${rocks}</span>`;
+    mhud.innerHTML = modeBadge + rockSvg + countLabel;
   } else {
     const old = document.getElementById('miner-rock-hud'); if(old) old.remove();
   }
@@ -11392,7 +11513,11 @@ function updatePlayer(dt){
   // ── Snowball: update logic (handled in projectiles but also track here) ──
 
   // ── AMMO RECHARGE ──
-  if(player.currentAmmo!=null && player.maxAmmo!=null && player.currentAmmo<player.maxAmmo){
+  // Miner in rock mode: attack uses rocks (separate pool) — ammo bar irrelevant, no recharge needed
+  if(player.heroId === 'miner' && player.minerRockMode){
+    // keep currentAmmo full so attack fires immediately
+    player.currentAmmo = player.maxAmmo || 99;
+  } else if(player.currentAmmo!=null && player.maxAmmo!=null && player.currentAmmo<player.maxAmmo){
     player.ammoTimer=(player.ammoTimer||0)+dt;
     const cd=player.ammoCooldown||1.0;
     while(player.ammoTimer>=cd && player.currentAmmo<player.maxAmmo){
@@ -12224,16 +12349,25 @@ function updateProjectiles(arr,dt,hitEnemy){
           }
           // ── Rocket explosion (robot/gnomemech): AoE ──
           if(p._isRocket){
-            const BLAST_R = 2.0;
+            const BLAST_R = 3.8; // bigger splash radius
+            const hitPos = e.mesh.position.clone();
             for(let rj=enemies.length-1;rj>=0;rj--){
               if(rj===j) continue;
-              if(distanceXZ(enemies[rj].mesh.position,e.mesh.position)<BLAST_R){
-                enemies[rj].hp -= p.damage*0.6; enemies[rj].hitFlash=1;
-                showDamageNumber(enemies[rj].mesh.position.clone().add(new THREE.Vector3(0,1.2,0)),p.damage*0.6,'normal');
+              const rd = distanceXZ(enemies[rj].mesh.position, hitPos);
+              if(rd < BLAST_R){
+                const splashDmg = p.damage * 0.75 * (1 - rd/BLAST_R*0.5);
+                enemies[rj].hp -= splashDmg; enemies[rj].hitFlash=1;
+                showDamageNumber(enemies[rj].mesh.position.clone().add(new THREE.Vector3(0,1.2,0)),splashDmg,'normal');
+                // Knockback from explosion center
+                const kDir = enemies[rj].mesh.position.clone().sub(hitPos).setY(0);
+                if(kDir.lengthSq()>0.001) kDir.normalize();
+                enemies[rj].mesh.position.addScaledVector(kDir, 2.0*(1-rd/BLAST_R));
                 if(enemies[rj].hp<=0) killEnemyAt(rj);
               }
             }
-            burst(e.mesh.position.clone().add(new THREE.Vector3(0,0.5,0)), 0xFF4400, 14, 0.10, 0.6);
+            burst(hitPos.clone().add(new THREE.Vector3(0,0.5,0)), 0xFF5500, 22, 0.12, 0.8);
+            burst(hitPos.clone().add(new THREE.Vector3(0,0.5,0)), 0xFFAA00, 10, 0.09, 0.55);
+            burst(hitPos.clone().add(new THREE.Vector3(0,0.5,0)), 0xFFFFFF, 6,  0.06, 0.35);
           }
           // ── Gold bag explosion: bigger radius, knockback + spawn 5 coins ──
           if(p._goldBag){
@@ -13099,12 +13233,17 @@ function updateHUD(){
   const hp = Math.max(0,Math.round(player.hp));
   const mhp = Math.round(player.maxHp);
   const isGnome = (player.heroId||settings.hero) === 'gnome_mech';
-  const shield = isGnome ? Math.round(player.gnomeMechShield||0) : 0;
-  if(isGnome && shield > 0){
+  const isRobot = (player.heroId||settings.hero) === 'robot';
+  const shield = isGnome ? Math.round(player.gnomeMechShield||0)
+               : isRobot ? Math.round(player.robotShield||0) : 0;
+  const shieldActive = (isGnome && shield > 0) || (isRobot && shield > 0);
+  if(shieldActive){
     hpEl.textContent = hp;
-    maxHpEl.innerHTML = mhp + '+' + shield + '<svg width="10" height="10" viewBox="0 0 12 12" style="vertical-align:middle;margin-left:1px"><path d="M6 1 L11 3.5 L11 7 Q11 10 6 11.5 Q1 10 1 7 L1 3.5 Z" fill="#ef4444" stroke="#b91c1c" stroke-width="0.8"/></svg>';
-    hpEl.style.color = '#4af';
-    maxHpEl.style.color = '#4af';
+    const shieldColor = isRobot ? '#00AAFF' : '#ef4444';
+    const shieldStroke = isRobot ? '#0055AA' : '#b91c1c';
+    maxHpEl.innerHTML = mhp + '+' + shield + `<svg width="10" height="10" viewBox="0 0 12 12" style="vertical-align:middle;margin-left:1px"><path d="M6 1 L11 3.5 L11 7 Q11 10 6 11.5 Q1 10 1 7 L1 3.5 Z" fill="${shieldColor}" stroke="${shieldStroke}" stroke-width="0.8"/></svg>`;
+    hpEl.style.color = isRobot ? '#44CCFF' : '#4af';
+    maxHpEl.style.color = isRobot ? '#44CCFF' : '#4af';
     if(hudHpBar){ hudHpBar.style.width=`${Math.min(100,hp/mhp*100)}%`; hudHpBar.style.background='linear-gradient(90deg,#2299ff,#66ccff)'; }
   } else {
     hpEl.textContent=hp; maxHpEl.textContent=mhp;
@@ -13948,6 +14087,7 @@ dashBtn.addEventListener('pointerdown',e=>{
   _skillJoyShow();
   if(player.heroId==='frost_huntress') startIceblinkCharge();
   if(player.heroId==='shadow_alchemist') startBombAim();
+  else if(player.heroId==='leprechaun') startBombAim();
   else if(player.heroId==='necromancer') startSummonAim();
   // blood_priest и slowfield — скилл сразу при нажатии, не нужно держать
   else if(player.heroId==='blood_priest' || heroData().abilityType==='slowfield'){
@@ -13962,7 +14102,7 @@ dashBtn.addEventListener('pointermove',e=>{
   const rawDy = e.clientY-dashAim.centerY;
   _skillJoyUpdate(rawDx, rawDy);
   // Алхимик: обновляем дугу по направлению и дальности джойстика
-  if(player.heroId==='shadow_alchemist' && player.bombAiming){
+  if((player.heroId==='shadow_alchemist' || player.heroId==='leprechaun') && player.bombAiming){
     // Используем сырое расстояние в пикселях (макс ~80px = полная дальность)
     const rawLen = Math.hypot(rawDx, rawDy);
     player.bombPower = Math.min(rawLen / 80, 1.0);
@@ -14004,10 +14144,11 @@ function releaseDashAim(e){
     _skillJoyHide();
     return;
   }
-  if(player.heroId==='shadow_alchemist' && player.bombAiming){
+  if((player.heroId==='shadow_alchemist' || player.heroId==='leprechaun') && player.bombAiming){
     const dirVec = new THREE.Vector3(dashAim.x,0,dashAim.y);
     dirVec.normalize().applyAxisAngle(new THREE.Vector3(0,1,0),cameraAngle);
-    releaseBombThrow(dirVec, player.bombPower||0.5);
+    if(player.heroId==='leprechaun') releaseLeprechaunBag(dirVec, player.bombPower||0.5);
+    else releaseBombThrow(dirVec, player.bombPower||0.5);
     dashAim.active=false; dashAim.pointerId=null;
     _skillJoyHide();
     return;
