@@ -6605,17 +6605,8 @@ scene.add(dashMarker);
   for(let si=0;si<3;si++){
     const startA = (si/3)*Math.PI*2;
     const endA   = ((si+1)/3)*Math.PI*2;
-    const pts = [new THREE.Vector3(0,0,0)];
     const segs = 20;
-    for(let sj=0;sj<=segs;sj++){
-      const a = startA + (sj/segs)*(endA-startA);
-      pts.push(new THREE.Vector3(Math.cos(a)*3.5, 0, Math.sin(a)*3.5));
-    }
-    pts.push(new THREE.Vector3(0,0,0));
-    const secGeo = new THREE.BufferGeometry().setFromPoints(pts);
-    const secMat = new THREE.MeshBasicMaterial({color:shamanSectorColors[si],transparent:true,opacity:0.35,depthWrite:false,side:THREE.DoubleSide});
-    const secMesh = new THREE.Mesh(new THREE.ConvexGeometry ? new THREE.ConvexGeometry(pts) : secGeo, secMat);
-    // Use ShapeGeometry instead for the filled sector
+    // Filled sector using ShapeGeometry
     const shape = new THREE.Shape();
     shape.moveTo(0,0);
     for(let sj=0;sj<=segs;sj++){
