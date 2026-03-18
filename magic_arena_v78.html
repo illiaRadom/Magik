@@ -7025,6 +7025,10 @@ function resetPlayerStats(){
   if(player._samuraiAura){ player.mesh?.remove(player._samuraiAura); player._samuraiAura=null; }
   player.samuraiUltTimer = 0;
   player.samuraiStrikeIdx = 0;
+  if(player._machomanAura){ player.mesh?.remove(player._machomanAura); player._machomanAura=null; }
+  if(player._machomanAura2){ player.mesh?.remove(player._machomanAura2); player._machomanAura2=null; }
+  player.machomanUltActive = false; player.machomanUltTimer = 0;
+  const _mhud = document.getElementById('machoman-ult-hud'); if(_mhud) _mhud.remove();
   rebuildPlayerMesh();
   applyElementVisualsToMesh(player.mesh);
 }
@@ -11016,13 +11020,60 @@ function updatePlayer(dt){
     }
   }
 
-  // ── Machoman: ult timer ──
+  // ── Machoman: ult timer + visual aura ──
   if(_heroId === 'machoman' && player.machomanUltActive){
     player.machomanUltTimer -= dt;
     if(player.machomanUltTimer <= 0){
       player.machomanUltActive = false;
       player.speed = player.baseSpeed || player.speed / 1.5;
+      // Remove aura on end
+      if(player._machomanAura){ player.mesh.remove(player._machomanAura); player._machomanAura=null; }
+      if(player._machomanAura2){ player.mesh.remove(player._machomanAura2); player._machomanAura2=null; }
+      const ultEndEl = document.getElementById('machoman-ult-hud'); if(ultEndEl) ultEndEl.remove();
+    } else {
+      // Inner spinning ring (red)
+      if(!player._machomanAura){
+        const aGeo = new THREE.TorusGeometry(0.90, 0.10, 8, 32);
+        const aMat = new THREE.MeshBasicMaterial({color:0xFF3300,transparent:true,opacity:0.85,depthWrite:false});
+        player._machomanAura = new THREE.Mesh(aGeo, aMat);
+        player._machomanAura.rotation.x = Math.PI/2;
+        player._machomanAura.position.set(0, 0.08, 0);
+        player.mesh.add(player._machomanAura);
+      }
+      // Outer pulsing ring (orange)
+      if(!player._machomanAura2){
+        const a2Geo = new THREE.TorusGeometry(1.30, 0.06, 6, 28);
+        const a2Mat = new THREE.MeshBasicMaterial({color:0xFF8800,transparent:true,opacity:0.55,depthWrite:false});
+        player._machomanAura2 = new THREE.Mesh(a2Geo, a2Mat);
+        player._machomanAura2.rotation.x = Math.PI/2;
+        player._machomanAura2.position.set(0, 0.06, 0);
+        player.mesh.add(player._machomanAura2);
+      }
+      // Animate: spin inner ring, pulse outer ring
+      const t = Date.now() * 0.004;
+      if(player._machomanAura)  player._machomanAura.rotation.z  = t * 2.5;
+      if(player._machomanAura2) player._machomanAura2.material.opacity = 0.35 + Math.sin(t*3)*0.30;
+      // Occasional red sparks off the body
+      if(Math.random() < 0.18){
+        const sp = player.mesh.position.clone().add(new THREE.Vector3((Math.random()-.5)*1.2, 0.8+Math.random()*0.8, (Math.random()-.5)*1.2));
+        burst(sp, 0xFF4400, 4, 0.07, 0.30);
+      }
+      // HUD bar showing remaining time
+      let ultHud = document.getElementById('machoman-ult-hud');
+      if(!ultHud){
+        ultHud = document.createElement('div');
+        ultHud.id = 'machoman-ult-hud';
+        ultHud.style.cssText='position:fixed;bottom:128px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:2px;pointer-events:none;z-index:999';
+        ultHud.innerHTML='<div style="font-size:11px;font-weight:bold;color:#FF6633;letter-spacing:.12em;text-shadow:0 0 6px #FF3300">POWER SURGE</div>'
+          +'<div id="machoman-ult-bar-wrap" style="width:90px;height:6px;background:rgba(0,0,0,.5);border-radius:3px;overflow:hidden"><div id="machoman-ult-bar" style="height:100%;background:linear-gradient(90deg,#FF3300,#FF8800);border-radius:3px;transition:width .1s"></div></div>';
+        document.body.appendChild(ultHud);
+      }
+      const barEl = document.getElementById('machoman-ult-bar');
+      if(barEl) barEl.style.width = `${(player.machomanUltTimer/6.0)*100}%`;
     }
+  } else if(_heroId === 'machoman' && !player.machomanUltActive){
+    if(player._machomanAura){ player.mesh.remove(player._machomanAura); player._machomanAura=null; }
+    if(player._machomanAura2){ player.mesh.remove(player._machomanAura2); player._machomanAura2=null; }
   }
 
   // ── Machoman: smooth punch lunge animation ──
