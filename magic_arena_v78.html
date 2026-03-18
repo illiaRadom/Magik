@@ -11307,6 +11307,10 @@ function updatePlayer(dt){
     attackInput.released=false;
     if(!player.charging) firePlayerSpell(); // не стрелять обычной атакой во время заряда
   }
+  // Гном: авто-стрельба пока зажата кнопка атаки (использует все 4 патрона)
+  if((player.heroId||settings.hero)==='gnome_mech' && attackMag>.04 && !dashAim.active && !pausedForUpgrade){
+    firePlayerSpell();
+  }
   if(dashAim.active){
     const v=new THREE.Vector3(dashAim.x,0,dashAim.y);
     if(v.lengthSq()>.0001){
