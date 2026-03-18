@@ -3490,6 +3490,17 @@ window.createShaman = function () {
   torsoG.add(_at(_O(.058,mPaintB), -.08,.46,.26));
   torsoG.add(_at(_O(.058,mPaintB),  .08,.46,.26));
   torsoG.add(_at(_O(.058,mPaintB),  0,  .38,.26));
+  // Back tribal decorations — spine bones and painted patterns
+  for (let i = 0; i < 6; i++)
+    torsoG.add(_at(_O(.036,mBone), 0,.06+i*.10,-.24)); // spine knobs
+  for (let i = 0; i < 4; i++) {
+    torsoG.add(_at(_B(.08,.06,.028,mPaintR), -.18+i*.12,.20,-.25, 0,0,(i%2===0?.30:-.30))); // back tribal marks
+    torsoG.add(_at(_K(.022,.10,4,mBone), -.18+i*.12,.34,-.24, Math.PI*.80,0,0)); // bone spine spikes
+  }
+  torsoG.add(_at(_B(.38,.04,.028,mPaintW), 0,.40,-.25)); // white band
+  torsoG.add(_at(_B(.38,.04,.028,mPaintW), 0,.24,-.25)); // white band
+  torsoG.add(_at(_B(.38,.04,.028,mPaintB), 0,.32,-.25)); // blue band
+
   // Bone necklace
   torsoG.add(_at(_C(.14,.14,.050,5,mBone), 0,.68,0));
   for (let i = 0; i < 8; i++) {
@@ -3516,8 +3527,8 @@ window.createShaman = function () {
   headG.position.set(0,.26,0); neckG.add(headG);
   headG.add(_at(_B(.50,.46,.44,mSkin),   0,.10,0)); // SQUARE head
   headG.add(_at(_B(.44,.40,.12,mSkinL),  0,.10,.24)); // face panel
-  headG.add(_at(_O(.052,_m(0x3A1A04,.92)), -.10,.14,.26)); // dark eyes
-  headG.add(_at(_O(.052,_m(0x3A1A04,.92)),  .10,.14,.26));
+  headG.add(_at(_O(.062,_m(0xFF2200,.04,.0,0xFF0000,7.0)), -.10,.14,.26)); // RED glowing eyes
+  headG.add(_at(_O(.062,_m(0xFF2200,.04,.0,0xFF0000,7.0)),  .10,.14,.26));
 
   // BIG WOODEN MASK — TALL, LONG, and detailed with big eyes+mouth
   const maskG = new THREE.Group();
