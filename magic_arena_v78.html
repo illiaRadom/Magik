@@ -2988,36 +2988,39 @@ window.createSpiderQueen = function () {
   const mSkin  = _m(0xCCAAccD, .68, .0);
   const mChitin= _m(0x3A0044, .32, .44);
 
-  // ─── THICK SPIDER LEGS — she STANDS on these, pointing DOWN ───
-  // 4 thick legs, wider stance, body raised high — legs originate from body sides at height
-  const spiderStandAngles = [-.16, .28];
+  // ─── 4 STANDING LEGS — she stands upright on these, pointing DOWN ───
+  // 2 front legs, 2 rear legs — spread slightly to sides, then go STRAIGHT DOWN
+  const spiderStandConfigs = [
+    { fwd:  0.40, latSpread: 0.42, seg1Len: 0.50, seg2Bend: 1.80, seg3Adj: -1.10 }, // front pair
+    { fwd: -0.30, latSpread: 0.42, seg1Len: 0.50, seg2Bend: 1.80, seg3Adj: -1.10 }, // rear pair
+  ];
   for (let sx = -1; sx <= 1; sx += 2) {
-    spiderStandAngles.forEach((fwd, i) => {
+    spiderStandConfigs.forEach((cfg) => {
       const sleg = new THREE.Group();
-      // Legs start from the pelvis/lower body area at Y=0.68
-      sleg.position.set(sx*.46, .68, i===0?.24:-.22);
-      // Spread outward and downward to act as stilts
-      sleg.rotation.set(fwd*.2, 0, sx*(Math.PI*.28+i*.04));
+      // Hip socket — low on pelvis, spread to sides
+      sleg.position.set(sx * 0.42, 0.60, cfg.fwd);
+      // Very slight sideways tilt — legs go mostly DOWN not sideways
+      sleg.rotation.set(0, 0, sx * 0.22);
       root.add(sleg);
-      // Segment 1 — THICK, goes outward then down
+      // Segment 1 — upper leg, mostly vertical
       const s1 = new THREE.Group(); sleg.add(s1);
-      s1.add(_at(_B(.16,.60,.16,mDark), 0,-.30,0));
-      s1.add(_at(_B(.12,.10,.12,mChitin), 0,0,0)); // joint cap
-      // Segment 2 — bends sharply DOWN to ground
-      const s2 = new THREE.Group(); s2.position.set(0,-.60,0); s1.add(s2);
-      s2.rotation.x = 1.80; // sharper downward bend toward ground
-      s2.add(_at(_B(.13,.58,.13,mNavy), 0,-.29,0));
-      s2.add(_at(_B(.10,.10,.10,mChitin), 0,0,0)); // knee joint
-      // Segment 3 — foot, angling to reach ground
-      const s3 = new THREE.Group(); s3.position.set(0,-.58,0); s2.add(s3);
-      s3.rotation.x = -.90;
-      s3.add(_at(_B(.10,.44,.10,mDark), 0,-.22,0));
-      // Claw tip — touches ground
-      s3.add(_at(_K(.060,.20,4,mFang), 0,-.50,0, 0,0,.24*sx));
+      s1.add(_at(_B(.13, cfg.seg1Len, .13, mDark), 0, -cfg.seg1Len*0.5, 0));
+      s1.add(_at(_B(.11,.10,.11, mChitin), 0, 0, 0)); // hip joint ball
+      // Segment 2 — mid leg, bends to point downward
+      const s2 = new THREE.Group(); s2.position.set(0, -cfg.seg1Len, 0); s1.add(s2);
+      s2.rotation.x = cfg.seg2Bend; // bend knee sharply downward
+      s2.add(_at(_B(.11,.50,.11, mNavy), 0, -.25, 0));
+      s2.add(_at(_B(.09,.10,.09, mChitin), 0, 0, 0)); // knee joint
+      // Segment 3 — lower leg / foot reaches ground
+      const s3 = new THREE.Group(); s3.position.set(0, -.50, 0); s2.add(s3);
+      s3.rotation.x = cfg.seg3Adj; // angle foot flat to ground
+      s3.add(_at(_B(.09,.36,.09, mDark), 0, -.18, 0));
+      // Claw tip
+      s3.add(_at(_K(.048,.16, 4, mFang), 0, -.38, 0, 0, 0, .18*sx));
     });
   }
-  // Raise entire root so legs reach ground properly
-  root.position.y = 0;
+  // Lift root so standing legs reach the ground properly
+  root.position.y = 0.22;
 
   // ─── ABDOMEN (large, hangs behind) ───────────────────────────
   const abdG = new THREE.Group();
@@ -3089,17 +3092,25 @@ window.createSpiderQueen = function () {
   headG.add(_at(_B(.52,.46,.48,mSkin),   0,.12,0));
   headG.add(_at(_B(.48,.40,.14,mPurpL),  0,.12,.26)); // face colour panel
   headG.add(_at(_B(.44,.34,.10,mSkin),   0,.10,.30)); // skin face
-  // Chitin crown/hair — dramatic + MUCH MORE HAIR
-  for (let i = 0; i < 12; i++) {
-    const a = (i/12)*Math.PI*2;
-    headG.add(_at(_K(.052,.38,4,mChitin), Math.cos(a)*.16,.32+Math.abs(Math.sin(i*.9))*.06,Math.sin(a)*.16, 0,0,a+.3));
+  // Chitin crown — 6 dramatic pointed spikes forming a crown
+  for (let i = 0; i < 6; i++) {
+    const a = (i/6)*Math.PI*2;
+    headG.add(_at(_K(.048,.40,4,mChitin), Math.cos(a)*.13,.34+Math.abs(Math.sin(i))*.05,Math.sin(a)*.13, 0,0,a+.26));
   }
-  // Extra long flowing hair strands on back
-  headG.add(_at(_K(.060,.50,4,mPurpD), 0,.28,-.24, .50,0,0));
-  headG.add(_at(_K(.052,.46,4,mPurpD), -.14,.26,-.22, .46,0,-.30));
-  headG.add(_at(_K(.052,.46,4,mPurpD),  .14,.26,-.22, .46,0, .30));
-  headG.add(_at(_K(.044,.42,4,mChitin), -.22,.22,-.18, .40,0,-.50));
-  headG.add(_at(_K(.044,.42,4,mChitin),  .22,.22,-.18, .40,0, .50));
+  // Flowing hair — thick back volume + side curtains + top mass
+  // Central back flow (largest strands)
+  headG.add(_at(_B(.36,.56,.10,mPurpD),  0,.22,-.28));  // thick back hair volume
+  headG.add(_at(_B(.28,.46,.08,mPurpD),  0,.10,-.32));  // lower back strand
+  // Side curtains
+  headG.add(_at(_B(.12,.60,.08,mPurpD), -.22,.14,-.22, 0,0,-.12)); // left curtain
+  headG.add(_at(_B(.12,.60,.08,mPurpD),  .22,.14,-.22, 0,0, .12)); // right curtain
+  headG.add(_at(_B(.10,.44,.06,mPurpD), -.28,.08,-.14, 0,0,-.22)); // outer left
+  headG.add(_at(_B(.10,.44,.06,mPurpD),  .28,.08,-.14, 0,0, .22)); // outer right
+  // Top hair mass (darker)
+  headG.add(_at(_B(.44,.14,.26,mPurpD),  0,.32,-.08)); // top back poof
+  // Two dramatic front hair spikes framing face
+  headG.add(_at(_K(.044,.28,4,mPurpD), -.18,.38,.10, -.26,0,-.30));
+  headG.add(_at(_K(.044,.28,4,mPurpD),  .18,.38,.10, -.26,0, .30));
   // 2 HUGE primary eyes
   headG.add(_at(_B(.28,.24,.09,_m(0x330000,.75)), -.14,.14,.26)); // L socket
   headG.add(_at(_B(.28,.24,.09,_m(0x330000,.75)),  .14,.14,.26)); // R socket
@@ -3118,26 +3129,6 @@ window.createSpiderQueen = function () {
   // Lips (feminine detail)
   headG.add(_at(_B(.28,.056,.06,mPurpD), 0,-.06,.30));
   headG.add(_at(_B(.22,.040,.06,_m(0xCC4488,.60,.0)), 0,-.06,.32));
-
-  // ─── 6 EXTRA SPIDER LEGS from torso sides ────────────────────
-  const extraAngles = [-.50, .20, .82];
-  for (let sx = -1; sx <= 1; sx += 2) {
-    extraAngles.forEach((tilt, i) => {
-      const xleg = new THREE.Group();
-      xleg.position.set(sx*.40, .20-i*.12, -.08-i*.10);
-      xleg.rotation.set(tilt, 0, sx*(Math.PI*.42+i*.06));
-      torsoG.add(xleg);
-      const xs1 = new THREE.Group(); xleg.add(xs1);
-      xs1.add(_at(_B(.064,.46,.064,mDark), 0,-.23,0));
-      const xs2 = new THREE.Group(); xs2.position.set(0,-.46,0); xs1.add(xs2);
-      xs2.rotation.x = .50*sx;
-      xs2.add(_at(_B(.052,.38,.052,mNavy), 0,-.19,0));
-      const xs3 = new THREE.Group(); xs3.position.set(0,-.38,0); xs2.add(xs3);
-      xs3.rotation.x = -.44*sx;
-      xs3.add(_at(_B(.042,.30,.042,mDark), 0,-.15,0));
-      xs3.add(_at(_K(.036,.12,4,mFang), 0,-.33,0, 0,0,.24*sx));
-    });
-  }
 
   root.userData.refs = { torso:torsoG, head:headG, abdomen:abdG };
   return root;
@@ -3292,9 +3283,9 @@ window.createMadScientist = function () {
   const mEye   = _m(0x2244CC, .80, .0);
   const mGlass = _m(0xAADDFF, .06, .0, 0x66AAFF, 2.0, true, .60);
 
-  // TALLER legs
-  const legL = _buildLegV3(mCoat,mCoatS,mMet,mBoots,mMet, .26,.46,.40,.24);
-  const legR = _buildLegV3(mCoat,mCoatS,mMet,mBoots,mMet, .26,.46,.40,.24);
+  // Shorter legs
+  const legL = _buildLegV3(mCoat,mCoatS,mMet,mBoots,mMet, .26,.34,.36,.22);
+  const legR = _buildLegV3(mCoat,mCoatS,mMet,mBoots,mMet, .26,.34,.36,.22);
   legL.position.set(-.22,0,0); root.add(legL);
   legR.position.set( .22,0,0); root.add(legR);
 
@@ -3467,15 +3458,18 @@ window.createRatKing = function () {
   }
 
   const sword=new THREE.Group();
-  sword.add(_at(_C(.040,.040,.40,4,mBone),0,0,0)); // thicker hilt/handle at y=0
-  sword.add(_at(_B(.24,.06,.06,mBone),0,.24,0)); // wider crossguard
-  sword.add(_at(_B(.054,.72,.054,mBone),0,.60,0)); // longer blade going up
-  sword.add(_at(_K(.054,.18,4,mBone),0,1.00,0)); // sharp tip at top
+  sword.add(_at(_C(.052,.052,.52,4,mBone),0,0,0)); // thick hilt/handle
+  sword.add(_at(_B(.34,.08,.08,mBone),0,.32,0)); // WIDE crossguard
+  sword.add(_at(_B(.072,.96,.072,mBone),0,.80,0)); // LONG broad blade
+  sword.add(_at(_K(.072,.24,4,mBone),0,1.30,0)); // big sharp tip
   // Bone notches on blade
-  for(let i=0;i<4;i++) sword.add(_at(_B(.07,.04,.02,mArD),0,.36+i*.14,.03));
+  for(let i=0;i<5;i++) sword.add(_at(_B(.09,.05,.03,mArD),0,.40+i*.17,.04));
+  // Gold crossguard gems
+  sword.add(_at(_O(.038,mGold), -.17,.32,0));
+  sword.add(_at(_O(.038,mGold),  .17,.32,0));
   // Hold upright, tip pointing up, handle in hand — sword held in front
   sword.rotation.set(Math.PI/2,0,0); // point blade forward/upward
-  sword.position.set(0,-.08,.12); // in front of hand
+  sword.position.set(0,-.10,.14); // in front of hand
   aR.handG.add(sword);
 
   root.scale.setScalar(0.88);
@@ -3603,7 +3597,7 @@ window.createShaman = function () {
   aL.shoulderG.rotation.set(.24,.08,.10); torsoG.add(aL.shoulderG);
   const aR = _buildArmV3(mSkin,mSkin,mSkinL,mSkin,mSkin,mWood, .28,.26, false,false);
   aR.shoulderG.position.set( .44,.60,0);
-  aR.shoulderG.rotation.set(-.56,-.08,-.10); torsoG.add(aR.shoulderG);
+  aR.shoulderG.rotation.set(-.30,-.08,-.10); torsoG.add(aR.shoulderG); // raised arm so staff is out front
   // Bone armbands
   for (const a of [aL,aR])
     for (let i = 0; i < 2; i++)
@@ -3685,21 +3679,26 @@ window.createShaman = function () {
   headG.add(_at(_K(.042,.36,4,mHair),  .20,.16,-.16, .44,0, .46));
   headG.add(_at(_B(.38,.18,.14,mHair), 0,.20,-.18)); // back hair volume
 
-  // BIG STAFF — very visible
+  // BIG STAFF — held forward, very visible
   const staffG = new THREE.Group();
-  staffG.add(_at(_C(.032,.032,.92,4,mWood), 0, 0, 0));
-  // 5-pointed star at top
+  // Longer shaft
+  staffG.add(_at(_C(.040,.040,1.10,4,mWood), 0, 0, 0));
+  // Grip bands
+  for(let gi=0;gi<3;gi++) staffG.add(_at(_C(.050,.050,.040,5,_m(0x5A2A0A,.70,.10)), 0, -.20+gi*.12, 0));
+  // Star totem head at top
+  staffG.add(_at(_O(.14,mStar),   0, .68, 0));  // big central star orb
+  staffG.add(_at(_O(.10,mStarB),  0, .68, 0));  // inner blue glow
+  // 5 star spikes around orb
   for (let i = 0; i < 5; i++) {
     const a = i/5*Math.PI*2;
-    staffG.add(_at(_K(.050,.24,4,mStar), Math.cos(a)*.10,.60,Math.sin(a)*.10, 0,0,a+Math.PI/5));
+    staffG.add(_at(_K(.056,.28,4,mStar), Math.cos(a)*.12,.68,Math.sin(a)*.12, 0,0,a+Math.PI/5));
   }
-  staffG.add(_at(_O(.11,mStar),  0,.60,0));  // big central orb
-  staffG.add(_at(_O(.08,mStarB), 0,.60,0));  // inner blue
   // Feathers hanging below star
   for (let i = 0; i < 3; i++)
-    staffG.add(_at(_B(.024,.20,.024,_m(0xFF4400,.68)), (i-1)*.06,.36,0, 0,0,(i-1)*.28));
-  staffG.rotation.set(0,.10,.24);
-  staffG.position.set(0,-.10,0);
+    staffG.add(_at(_B(.026,.22,.026,_m(0xFF4400,.68)), (i-1)*.07,.44,0, 0,0,(i-1)*.30));
+  // Hold staff upright and forward
+  staffG.rotation.set(Math.PI/2, 0, 0); // point staff forward (horizontal)
+  staffG.position.set(0, -.08, .16);     // slightly forward from hand
   aR.handG.add(staffG);
 
   root.userData.refs = {
@@ -6599,6 +6598,49 @@ scene.add(dashMarker);
     shadow:    makeCircleIndicator(3.0, 0x9333ea, 0.8),
     slowfield: makeCircleIndicator(8.5, 0x38bdf8, 0.65),
   };
+  // ── SHAMAN 3-SECTOR ULT INDICATOR ──
+  const shamanSectorGrp = new THREE.Group();
+  const shamanSectorColors = [0xFF3333, 0x33FF66, 0x3388FF]; // red, green, blue
+  const shamanSectorLabels = ['red','green','blue'];
+  for(let si=0;si<3;si++){
+    const startA = (si/3)*Math.PI*2;
+    const endA   = ((si+1)/3)*Math.PI*2;
+    const pts = [new THREE.Vector3(0,0,0)];
+    const segs = 20;
+    for(let sj=0;sj<=segs;sj++){
+      const a = startA + (sj/segs)*(endA-startA);
+      pts.push(new THREE.Vector3(Math.cos(a)*3.5, 0, Math.sin(a)*3.5));
+    }
+    pts.push(new THREE.Vector3(0,0,0));
+    const secGeo = new THREE.BufferGeometry().setFromPoints(pts);
+    const secMat = new THREE.MeshBasicMaterial({color:shamanSectorColors[si],transparent:true,opacity:0.35,depthWrite:false,side:THREE.DoubleSide});
+    const secMesh = new THREE.Mesh(new THREE.ConvexGeometry ? new THREE.ConvexGeometry(pts) : secGeo, secMat);
+    // Use ShapeGeometry instead for the filled sector
+    const shape = new THREE.Shape();
+    shape.moveTo(0,0);
+    for(let sj=0;sj<=segs;sj++){
+      const a = startA + (sj/segs)*(endA-startA);
+      shape.lineTo(Math.cos(a)*3.5, Math.sin(a)*3.5);
+    }
+    shape.lineTo(0,0);
+    const filledGeo = new THREE.ShapeGeometry(shape);
+    const filledMesh = new THREE.Mesh(filledGeo, new THREE.MeshBasicMaterial({color:shamanSectorColors[si],transparent:true,opacity:0.35,depthWrite:false,side:THREE.DoubleSide}));
+    filledMesh.rotation.x = -Math.PI/2;
+    filledMesh.position.y = 0.06;
+    shamanSectorGrp.add(filledMesh);
+    // Sector border line
+    const borderPts = [];
+    for(let sj=0;sj<=segs;sj++){
+      const a = startA + (sj/segs)*(endA-startA);
+      borderPts.push(new THREE.Vector3(Math.cos(a)*3.5, 0.08, Math.sin(a)*3.5));
+    }
+    const borderGeo = new THREE.BufferGeometry().setFromPoints(borderPts);
+    shamanSectorGrp.add(new THREE.Line(borderGeo, new THREE.LineBasicMaterial({color:shamanSectorColors[si],transparent:true,opacity:0.80})));
+  }
+  shamanSectorGrp.visible = false;
+  scene.add(shamanSectorGrp);
+  window._shamanSectorIndicator = shamanSectorGrp;
+
   // Expose for update loop
   window._aimIndicators = {
     rangedCone: aimConeGroup,
@@ -6622,6 +6664,14 @@ function updateAimIndicators(){
   ind.meleeCone.visible  = false;
   if(ind.machoRect) ind.machoRect.visible = false;
   Object.values(ind.skill).forEach(s => s.visible = false);
+
+  // Shaman sector indicator (show when skill button is held or aiming)
+  const _shamanInd = window._shamanSectorIndicator;
+  if(_shamanInd){
+    const isShaman = (player.heroId||settings.hero) === 'shaman';
+    _shamanInd.visible = isShaman && dashAim.active && started && player.alive && !pausedForUpgrade;
+    if(_shamanInd.visible) _shamanInd.position.set(player.mesh.position.x, 0, player.mesh.position.z);
+  }
 
   if(!isAiming && !dashAim.active) return;
 
@@ -8569,13 +8619,13 @@ const heroAttackProfiles = {
   samurai:       { melee:true,  radius:3.2, halfAng:Math.PI*0.42, rateMulti:1.0,  dmgMulti:1.0,  swingColor:0xD4AF37 },
   machoman:      { melee:true,  radius:3.6, halfAng:Math.PI*0.22, rateMulti:0.85, dmgMulti:1.0,  swingColor:0xFF6060 },
   miner:         { melee:true,  radius:2.8, halfAng:Math.PI*0.35, rateMulti:0.9,  dmgMulti:1.0,  swingColor:0x4B8BB0 },
-  ice_lizard:    { melee:true,  radius:3.4, halfAng:Math.PI,      rateMulti:0.9,  dmgMulti:1.0,  swingColor:0x88CCFF },
+  ice_lizard:    { melee:true,  radius:1.6, halfAng:Math.PI,      rateMulti:0.9,  dmgMulti:1.0,  swingColor:0x88CCFF },
   rat_king:      { melee:true,  radius:2.8, halfAng:Math.PI*0.38, rateMulti:0.9,  dmgMulti:1.0,  swingColor:0x888888 },
   yeti:          { melee:false, rateMulti:0.9,  dmgMulti:1.0,  projLife:1.0, projSpeed:11, projColor:0xAAEEFF },
   leprechaun:    { melee:false, rateMulti:1.1,  dmgMulti:1.0,  projLife:1.6, projSpeed:11, projColor:0xFFD700 },
   robot:         { melee:false, rateMulti:0.75, dmgMulti:1.0,  projLife:2.5, projSpeed:18, projColor:0xAAAAAA },
   spider_queen:  { melee:false, rateMulti:1.0,  dmgMulti:1.0,  projLife:2.0, projSpeed:13, projColor:0xDDDDDD },
-  minotaur:      { melee:false, rateMulti:0.7,  dmgMulti:1.0,  projLife:1.4, projSpeed:16, projColor:0xCC8844 },
+  minotaur:      { melee:false, rateMulti:0.7,  dmgMulti:1.0,  projLife:2.5, projSpeed:17, projColor:0xCC8844 },
   mad_scientist: { melee:false, rateMulti:1.1,  dmgMulti:1.0,  projLife:2.4, projSpeed:24, projColor:0xFFFF00 },
   shaman:        { melee:false, rateMulti:1.0,  dmgMulti:1.0,  projLife:2.0, projSpeed:14, projColor:0x44FF88 },
 };
@@ -8891,7 +8941,7 @@ function _applyShamanBuff(bType){
   } else if(bType==='green'){
     if(!player._shamanRegenBuff){ player._shamanRegenBuff=true; }
   } else if(bType==='blue'){
-    if(!player._shamanSpeedBuff){ player._shamanSpeedBuff=true; player.speed*=1.3; player.fireRate*=0.77; }
+    if(!player._shamanSpeedBuff){ player._shamanSpeedBuff=true; player.speed*=1.5; player.fireRate*=0.67; } // +50% spd, +50% reload
   }
   burst(player.mesh.position.clone().add(new THREE.Vector3(0,1.5,0)),
     bType==='red'?0xFF3333:bType==='green'?0x33FF66:0x3388FF, 14, 0.09, 0.6);
@@ -8900,7 +8950,7 @@ function _clearShamanBuff(){
   if(!player) return;
   if(player._shamanDmgBuff)  { player.damage /= 1.5;   player._shamanDmgBuff=false; }
   if(player._shamanRegenBuff){ player._shamanRegenBuff=false; }
-  if(player._shamanSpeedBuff){ player.speed  /= 1.3; player.fireRate/=0.77; player._shamanSpeedBuff=false; }
+  if(player._shamanSpeedBuff){ player.speed  /= 1.5; player.fireRate/=0.67; player._shamanSpeedBuff=false; }
   player.shamanBuff = null;
 }
 
@@ -9165,23 +9215,40 @@ function firePlayerSpell(){
       }
 
     } else if(heroId === 'ice_lizard'){
-      // 360° spear spin — full circle
+      // 360° spear spin — true full circle (halfAng=PI covers all angles after normalization)
       const hitAny = _doMeleeArc(r, Math.PI, aimAngle, dmg, col);
-      for(let i=0;i<8;i++){
-        const a=(i/8)*Math.PI*2;
-        const p2=origin.clone().add(new THREE.Vector3(Math.sin(a)*r*0.7,1,Math.cos(a)*r*0.7));
-        burst(p2,0x88CCFF,4,0.07,0.35);
+      // Expanding ice ring visual — full circle
+      const spinRingGeo = new THREE.TorusGeometry(r*0.88, 0.10, 8, 48);
+      const spinRingMat = new THREE.MeshBasicMaterial({color:0x88DDFF,transparent:true,opacity:0.95,depthWrite:false});
+      const spinRing = new THREE.Mesh(spinRingGeo, spinRingMat);
+      spinRing.rotation.x = Math.PI/2;
+      spinRing.position.copy(origin).setY(0.8);
+      scene.add(spinRing);
+      // Inner glow ring
+      const innerRingGeo = new THREE.TorusGeometry(r*0.44, 0.06, 6, 32);
+      const innerRingMat = new THREE.MeshBasicMaterial({color:0xCCEEFF,transparent:true,opacity:0.80,depthWrite:false});
+      const innerRing = new THREE.Mesh(innerRingGeo, innerRingMat);
+      innerRing.rotation.x = Math.PI/2;
+      innerRing.position.copy(origin).setY(0.8);
+      scene.add(innerRing);
+      let srt=0;
+      const srtick=()=>{ srt+=0.018; spinRing.scale.setScalar(1+srt*1.8); spinRingMat.opacity=Math.max(0,0.95-srt*2.8); innerRingMat.opacity=Math.max(0,0.80-srt*2.5); if(srt<0.34) requestAnimationFrame(srtick); else { scene.remove(spinRing); scene.remove(innerRing); } };
+      requestAnimationFrame(srtick);
+      for(let i=0;i<12;i++){
+        const a=(i/12)*Math.PI*2;
+        const p2=origin.clone().add(new THREE.Vector3(Math.sin(a)*r*0.75,1,Math.cos(a)*r*0.75));
+        burst(p2,0x88CCFF,4,0.07,0.32);
       }
-      burst(origin.clone().add(new THREE.Vector3(0,1,0)),0xAAEEFF,hitAny?12:6,0.09,0.50);
+      burst(origin.clone().add(new THREE.Vector3(0,1,0)),0xAAEEFF,hitAny?12:6,0.09,0.52);
       // Passive 15%: 8 ice spikes in all directions (freeze only, no dmg)
       if(Math.random()<0.15){
         for(let i=0;i<8;i++){
           const a=(i/8)*Math.PI*2;
           const sDir=new THREE.Vector3(Math.sin(a),0,Math.cos(a)).normalize();
           const sPos=origin.clone().add(new THREE.Vector3(sDir.x,1.0,sDir.z));
-          createProjectile(sPos,sDir,'player',{size:0.16,color:0xAAEEFF,speed:12,damage:0,life:1.5,remainingHits:1,_iceSpike:true});
+          createProjectile(sPos,sDir,'player',{size:0.14,color:0xAAEEFF,speed:10,damage:0,life:1.2,remainingHits:1,_iceSpike:true});
         }
-        burst(origin.clone().add(new THREE.Vector3(0,1.1,0)),0xCCEEFF,14,0.10,0.55);
+        burst(origin.clone().add(new THREE.Vector3(0,1.1,0)),0xCCEEFF,12,0.10,0.50);
       }
 
     } else if(heroId === 'rat_king'){
@@ -9354,27 +9421,49 @@ function firePlayerSpell(){
         projectiles.push({mesh:nutGrp,dir:aimDir.clone(),speed:isHoming?8:20,damage:dmg,owner:'player',life:pLife,radius:0.22,trailColor:0xCCCCCC,trailTimer:0,remainingHits:1,_spin:true,_homing:isHoming});
         if(isHoming){ burst(muzzle,0xCCEEFF,10,0.08,0.40); burst(muzzle,0xFFFFFF,5,0.06,0.25); }
         else { burst(muzzle,0x999999,6,0.07,0.32); }
-        // Accumulate ult charges
-        if(!player.madSciCharges) player.robotUltCharges=(player.robotUltCharges||0);
+        // Accumulate ult charges — need 8 hits, only when not in ult mode
+        if(!player.robotUltActive){
+          if(!player.robotUltCharges) player.robotUltCharges = 0;
+          player.robotUltCharges++;
+          if(player.robotUltCharges >= 8){ player.robotUltCharges = 8; player.activeSkillCooldown = 0; } // ready!
+        }
       }
 
     } else if(heroId === 'spider_queen'){
-      // Web ball
-      const webGeo=new THREE.SphereGeometry(0.22,8,8);
-      const webMesh=new THREE.Mesh(webGeo,new THREE.MeshBasicMaterial({color:0xDDDDDD}));
-      webMesh.position.copy(muzzle);
-      scene.add(webMesh);
-      projectiles.push({mesh:webMesh,dir:aimDir.clone(),speed:13,damage:dmg,owner:'player',life:2.0,radius:0.24,trailColor:0xCCCCCC,trailTimer:0,remainingHits:1});
-      burst(muzzle,0xFFFFFF,6,0.06,0.30);
+      // Web bolt — elongated web projectile with visible web disc
+      const webGroup = new THREE.Group();
+      // Glowing core
+      const webCore = new THREE.Mesh(new THREE.SphereGeometry(0.20,8,8), new THREE.MeshBasicMaterial({color:0xEEEEFF,transparent:true,opacity:0.95}));
+      webGroup.add(webCore);
+      // Web rings at different orientations — looks like spinning web disc
+      for(let ri=0;ri<4;ri++){
+        const rr = 0.22+ri*.06;
+        const wr=new THREE.Mesh(new THREE.TorusGeometry(rr,.018,4,12),new THREE.MeshBasicMaterial({color:ri===0?0xFFFFFF:0xCCCCDD,transparent:true,opacity:0.85-ri*0.12}));
+        wr.rotation.x=ri*Math.PI/4; wr.rotation.z=ri*Math.PI/5; webGroup.add(wr);
+      }
+      // 4 radial spoke lines
+      for(let si=0;si<4;si++){
+        const sa=si/4*Math.PI*2;
+        const spk=new THREE.Mesh(new THREE.CylinderGeometry(0.010,0.010,0.46,4),new THREE.MeshBasicMaterial({color:0xFFFFFF,transparent:true,opacity:0.80}));
+        spk.rotation.z=sa+Math.PI/2; webGroup.add(spk);
+      }
+      webGroup.position.copy(muzzle);
+      scene.add(webGroup);
+      projectiles.push({mesh:webGroup,dir:aimDir.clone(),speed:13,damage:dmg,owner:'player',life:2.0,radius:0.26,trailColor:0xCCCCFF,trailTimer:0,remainingHits:1,_spin:true});
+      burst(muzzle,0xEEEEFF,10,0.08,0.40);
+      burst(muzzle,0xAAAAAA,5,0.05,0.22);
 
     } else if(heroId === 'minotaur'){
-      // Shotgun — 2 pellets
-      for(let si=0;si<2;si++){
-        const spread=si===0?-0.16:0.16;
+      // Shotgun — 8 small pellets spread wide
+      const PELLET_COUNT = 8;
+      const SPREAD_TOTAL = 0.60; // total arc in radians
+      for(let si=0;si<PELLET_COUNT;si++){
+        const spread = -SPREAD_TOTAL/2 + (si/(PELLET_COUNT-1))*SPREAD_TOTAL;
         const sDir=new THREE.Vector3(Math.sin(aimAngle+spread),0,Math.cos(aimAngle+spread)).normalize();
-        createProjectile(muzzle.clone(),sDir,'player',{size:0.18,color:0xCC8844,speed:16,damage:dmg,life:1.4,remainingHits:1});
+        createProjectile(muzzle.clone(),sDir,'player',{size:0.12,color:0xCC8844,speed:17,damage:dmg*0.65,life:2.5,remainingHits:1});
       }
-      burst(muzzle,0xCC8844,14,0.09,0.52);
+      burst(muzzle,0xCC8844,16,0.09,0.55);
+      burst(muzzle,0xFF9900,8,0.06,0.35);
 
     } else if(heroId === 'mad_scientist'){
       // Lightning bolt — fast, long range
@@ -9389,13 +9478,28 @@ function firePlayerSpell(){
       if(player.madSciCharges<3) player.madSciCharges++;
 
     } else if(heroId === 'shaman'){
-      // Energy wave — piercing
-      const waveGeo=new THREE.SphereGeometry(0.22,8,8);
-      const waveMesh=new THREE.Mesh(waveGeo,new THREE.MeshBasicMaterial({color:0x44FF88}));
-      waveMesh.position.copy(muzzle);
-      scene.add(waveMesh);
-      projectiles.push({mesh:waveMesh,dir:aimDir.clone(),speed:14,damage:dmg,owner:'player',life:2.0,radius:0.24,trailColor:0x44FF88,trailTimer:0,remainingHits:999,hitEnemies:new Set()});
-      burst(muzzle,0x44FF88,8,0.07,0.40);
+      // Spirit wave — wide flat disc that pierces enemies
+      const waveGroup = new THREE.Group();
+      // Flat disc shape
+      const discGeo = new THREE.CylinderGeometry(0.48, 0.42, 0.12, 16);
+      const discMesh = new THREE.Mesh(discGeo, new THREE.MeshBasicMaterial({color:0x44FF88, transparent:true, opacity:0.85}));
+      waveGroup.add(discMesh);
+      // Glowing center orb
+      const coreGeo = new THREE.SphereGeometry(0.18, 8, 8);
+      const coreMesh = new THREE.Mesh(coreGeo, new THREE.MeshBasicMaterial({color:0xAAFFCC, transparent:true, opacity:0.95}));
+      waveGroup.add(coreMesh);
+      // Edge ring
+      const edgeGeo = new THREE.TorusGeometry(0.44, 0.06, 6, 20);
+      const edgeMesh = new THREE.Mesh(edgeGeo, new THREE.MeshBasicMaterial({color:0x88FFAA, transparent:true, opacity:0.75}));
+      edgeMesh.rotation.x = Math.PI/2;
+      waveGroup.add(edgeMesh);
+      // Orient disc face-forward
+      waveGroup.rotation.y = aimAngle;
+      waveGroup.position.copy(muzzle);
+      scene.add(waveGroup);
+      projectiles.push({mesh:waveGroup,dir:aimDir.clone(),speed:14,damage:dmg,owner:'player',life:2.2,radius:0.46,trailColor:0x44FF88,trailTimer:0,remainingHits:999,hitEnemies:new Set(),_spin:false});
+      burst(muzzle,0x44FF88,10,0.08,0.45);
+      burst(muzzle,0xAAFFCC,5,0.05,0.28);
 
     } else {
       // ── Generic ranged fallback ──
@@ -10292,6 +10396,80 @@ function releaseLeprechaunBag(dirVec, power){
   player.activeSkillCooldown = heroData().skillCd;
 }
 
+function releaseSpiderWebThrow(dirVec, power){
+  if(!player.alive) return;
+  player.bombAiming = false;
+  if(player.bombTarget){ scene.remove(player.bombTarget); player.bombTarget=null; }
+  if(player._bombArcLine){ scene.remove(player._bombArcLine); player._bombArcLine=null; }
+  player._bombAimDir = null;
+
+  const minDist=2, maxDist=10;
+  const dist = minDist + (power||0.5)*(maxDist-minDist);
+  const dir = dirVec.clone().normalize();
+  const target = player.mesh.position.clone().add(dir.clone().multiplyScalar(dist));
+  target.y = 0;
+
+  // Web ball mesh — sphere with silk rings
+  const webGroup = new THREE.Group();
+  const webCore = new THREE.Mesh(new THREE.SphereGeometry(0.28,8,8), new THREE.MeshBasicMaterial({color:0xCCCCCC}));
+  webGroup.add(webCore);
+  for(let ri=0;ri<4;ri++){
+    const wr=new THREE.Mesh(new THREE.TorusGeometry(0.22+ri*.04,.014,4,10),new THREE.MeshBasicMaterial({color:0xFFFFFF,transparent:true,opacity:0.80}));
+    wr.rotation.x=ri*Math.PI/4; wr.rotation.y=ri*Math.PI/5; webGroup.add(wr);
+  }
+  const startPos = player.mesh.position.clone().add(new THREE.Vector3(0,1.2,0));
+  webGroup.position.copy(startPos);
+  scene.add(webGroup);
+
+  const arcH = 3.5;
+  let t=0;
+  const flyWeb = ()=>{
+    t += 0.022;
+    const tt = Math.min(t,1);
+    webGroup.position.lerpVectors(startPos, target, tt);
+    webGroup.position.y += Math.sin(tt*Math.PI)*arcH;
+    webGroup.rotation.z += 0.20; webGroup.rotation.x += 0.15;
+    if(t<1){ requestAnimationFrame(flyWeb); }
+    else { scene.remove(webGroup); createSpiderWebZone(target); }
+  };
+  flyWeb();
+  burst(startPos, 0xCCCCDD, 12, 0.09, 0.5);
+  player.activeSkillCooldown = heroData().skillCd;
+}
+
+function createSpiderWebZone(pos){
+  const webRadius = 4.0;
+  const zonePos = pos.clone(); zonePos.y = 0.04;
+
+  // Spider web visual — radial spokes + concentric rings
+  const webG = new THREE.Group();
+  webG.position.copy(zonePos);
+  webG.rotation.x = -Math.PI/2;
+
+  // 8 radial spokes
+  for(let i=0;i<8;i++){
+    const a=(i/8)*Math.PI*2;
+    const pts=[new THREE.Vector3(0,0,0), new THREE.Vector3(Math.cos(a)*webRadius,Math.sin(a)*webRadius,0)];
+    webG.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({color:0xDDDDDD,transparent:true,opacity:0.85})));
+  }
+  // 5 concentric rings
+  for(let r=1;r<=5;r++){
+    const rr=webRadius*r/5, pts=[];
+    for(let i=0;i<=32;i++) pts.push(new THREE.Vector3(Math.cos((i/32)*Math.PI*2)*rr,Math.sin((i/32)*Math.PI*2)*rr,0));
+    webG.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({color:0xCCCCCC,transparent:true,opacity:Math.max(0.3,0.8-r*0.10)})));
+  }
+  scene.add(webG);
+
+  burst(zonePos.clone().add(new THREE.Vector3(0,0.5,0)), 0xFFFFFF, 20, 0.12, 0.8);
+  burst(zonePos.clone().add(new THREE.Vector3(0,0.3,0)), 0xCCCCCC, 14, 0.09, 0.6);
+
+  if(!player.webZones) player.webZones = [];
+  player.webZones.push({
+    mesh:webG, pos:zonePos.clone(), radius:webRadius,
+    timer:12.0, spawnTimer:1.0, spiderCount:0, spiders:[]
+  });
+}
+
 function startSummonAim(){
   if(!started||!player.alive||pausedForUpgrade) return;
   if(player.activeSkillCooldown>0) return;
@@ -10587,8 +10765,11 @@ function useHeroSkill(dir){
   }
 
   if(heroId === 'robot'){
-    // Rocket Mode: gain 100 shield, switch to rocket attacks
-    player.activeSkillCooldown = hero.skillCd;
+    // Rocket Mode: requires 8 hit charges, can't activate during ult
+    if(player.robotUltActive) return; // already in ult mode
+    if((player.robotUltCharges || 0) < 8) return; // not enough charges
+    player.robotUltCharges = 0;
+    player.activeSkillCooldown = 99; // locked until shield breaks
     player.robotShield = 100;
     player.robotUltActive = true;
     // Visual indicator — transparent sphere shield
@@ -10610,59 +10791,68 @@ function useHeroSkill(dir){
   }
 
   if(heroId === 'ice_lizard'){
-    // Frost Breath: 4 seconds of ice cone forward
+    // Frost Breath Ult: 5 seconds of 360° frost aura + attack speed boost
     player.activeSkillCooldown = hero.skillCd;
-    player.iceLizardBreathTimer = 4.0;
+    player.iceLizardBreathTimer = 5.0;
     player.speed *= 1.2;
-    player._iceLizardBreathBaseSpeed = player.baseSpeed * 1.2;
-    burst(player.mesh.position.clone().add(new THREE.Vector3(0,1.2,0)), 0xAAEEFF, 18, 0.10, 0.7);
+    player._iceLizardBreathBaseSpeed = (player.baseSpeed || player.speed/1.2) * 1.2;
+    // Attack speed boost (~45% faster)
+    if(!player._iceLizardOrigFireRate) player._iceLizardOrigFireRate = player.fireRate;
+    player.fireRate = (player._iceLizardOrigFireRate || player.fireRate) * 0.55;
+    // Big activation blast
+    burst(player.mesh.position.clone().add(new THREE.Vector3(0,1.2,0)), 0xAAEEFF, 40, 0.14, 1.2);
+    burst(player.mesh.position.clone().add(new THREE.Vector3(0,0.3,0)), 0xCCEEFF, 24, 0.12, 0.9);
+    burst(player.mesh.position.clone().add(new THREE.Vector3(0,0.8,0)), 0xFFFFFF, 16, 0.10, 0.6);
+    // Expanding frost wave ring
+    const fwGeo = new THREE.TorusGeometry(0.5, 0.12, 8, 40);
+    const fwMat = new THREE.MeshBasicMaterial({color:0xCCEEFF, transparent:true, opacity:0.9, depthWrite:false});
+    const fwRing = new THREE.Mesh(fwGeo, fwMat);
+    fwRing.rotation.x = Math.PI/2;
+    fwRing.position.copy(player.mesh.position).setY(0.2);
+    scene.add(fwRing);
+    let fwt = 0;
+    const fwtick = () => { fwt += 0.016; fwRing.scale.setScalar(1 + fwt*18); fwMat.opacity = Math.max(0, 0.9 - fwt*2.4); if(fwt<0.38) requestAnimationFrame(fwtick); else scene.remove(fwRing); };
+    requestAnimationFrame(fwtick);
     return;
   }
 
   if(heroId === 'spider_queen'){
-    // Spider Nest: create web zone at target location
-    player.activeSkillCooldown = hero.skillCd;
-    const aimDir = v.clone().normalize();
-    const zonePos = player.mesh.position.clone().add(aimDir.clone().multiplyScalar(6));
-    zonePos.y = 0.05;
-    // Web zone mesh
-    const zoneGeo = new THREE.CircleGeometry(4.0, 32);
-    const zoneMat = new THREE.MeshBasicMaterial({color:0xCCCCCC,transparent:true,opacity:0.35,depthWrite:false});
-    const zoneMesh = new THREE.Mesh(zoneGeo, zoneMat);
-    zoneMesh.rotation.x = -Math.PI/2;
-    zoneMesh.position.copy(zonePos);
-    scene.add(zoneMesh);
-    if(!player.webZones) player.webZones = [];
-    player.webZones.push({
-      mesh:zoneMesh, pos:zonePos.clone(), radius:4.0,
-      timer:12.0, spawnTimer:1.0, spiderCount:0, spiders:[]
-    });
-    burst(zonePos.clone().add(new THREE.Vector3(0,0.5,0)), 0xFFFFFF, 16, 0.10, 0.7);
+    // Web throw handled by releaseSpiderWebThrow (via hook or bomb-aim flow)
+    releaseSpiderWebThrow(v.clone().normalize(), 0.7);
     return;
   }
 
   if(heroId === 'minotaur'){
-    // Bull Rush: variable-distance dash (-60% damage while dashing)
-    // Handled by existing dash system — use startDash with variable power
-    const dashPower = player.minotaurDashPower || 0.8;
-    startDash(v, dashPower, 0xCC8844);
+    // Bull Rush: long, slow dash — flies far but slowly
+    // Override dash params for slower longer charge
+    player.activeSkillCooldown = hero.skillCd;
+    const dashDir = v.clone().normalize();
+    player.dash.active = true;
+    player.dash.dir.copy(dashDir);
+    player.dash.time = 0;
+    player.dash.duration = 0.55; // longer (was ~0.21)
+    player.dash.speed = 13;      // slower (was ~31)
+    player.dash.trailTimer = 0;
+    player.dashInvuln = player.dash.duration * 0.5;
     player.minotaurDashing = true;
     player.dash._minotaurHitSet = new Set();
-    burst(player.mesh.position.clone().add(new THREE.Vector3(0,1,0)), 0xCC8844, 14, 0.09, 0.5);
+    burst(player.mesh.position.clone().add(new THREE.Vector3(0,1,0)), 0xCC8844, 16, 0.10, 0.55);
+    burst(player.mesh.position.clone().add(new THREE.Vector3(0,0.3,0)), 0xFF9900, 10, 0.08, 0.40);
     return;
   }
 
   if(heroId === 'mad_scientist'){
-    // Electro Field: use accumulated charges
+    // Electro Field: use accumulated charges (max 3)
     const charges = player.madSciCharges || 0;
     if(charges <= 0) return;
     player.activeSkillCooldown = hero.skillCd;
     player.madSciCharges = 0;
     player.madSciFieldTimer   = 4.0;
     player.madSciFieldCharges = charges;
-    const fieldR = 3.0 + charges * 1.5; // radius scales with charges
+    // 1 charge: small zone, 5% slow; 2: medium, 10%; 3: large, 15%
+    const fieldR = charges === 1 ? 4.5 : charges === 2 ? 6.5 : 8.5;
     player.madSciFieldRadius  = fieldR;
-    player.madSciSpeedMult = 1 - charges * 0.05;
+    player.madSciSpeedMult = 1 - charges * 0.05; // 5% / 10% / 15% slow
     player.speed *= player.madSciSpeedMult;
     // Field visual
     if(player.madSciFieldMesh) player.mesh.remove(player.madSciFieldMesh);
@@ -10698,20 +10888,33 @@ function useHeroSkill(dir){
   }
 
   if(heroId === 'shaman'){
-    // Spirit Boon: 3-sector joystick determines buff
+    // Spirit Boon: 3-sector aim determines buff (green=heal, red=dmg, blue=speed)
     player.activeSkillCooldown = hero.skillCd;
     const aimAngle = Math.atan2(v.x, v.z); // in [-PI, PI]
-    // Sectors: right(0xred)=damage, up(0xgreen)=regen, left(0xblue)=speed/cd
-    // Map angle: right ~0, up ~-PI/2..PI/2 area, left ~PI or -PI
-    // Simpler: use aimAngle % 2PI split into 3 sectors
     const normalizedAngle = ((aimAngle % (Math.PI*2)) + Math.PI*2) % (Math.PI*2);
     let buffType;
-    if(normalizedAngle < Math.PI*2/3) buffType = 'red';
-    else if(normalizedAngle < Math.PI*4/3) buffType = 'green';
-    else buffType = 'blue';
+    if(normalizedAngle < Math.PI*2/3) buffType = 'red';          // 0°-120°: damage
+    else if(normalizedAngle < Math.PI*4/3) buffType = 'green';   // 120°-240°: regen
+    else buffType = 'blue';                                        // 240°-360°: speed+CD
+    // Clear previous buff before applying new
+    _clearShamanBuff();
     player.shamanBuff = buffType;
     player.shamanBuffTimer = 4.0;
     _applyShamanBuff(buffType);
+    // Big visual feedback for chosen buff
+    const buffColor = buffType==='red'?0xFF3333:buffType==='green'?0x33FF66:0x3388FF;
+    burst(player.mesh.position.clone().add(new THREE.Vector3(0,1.5,0)), buffColor, 30, 0.12, 1.0);
+    burst(player.mesh.position.clone().add(new THREE.Vector3(0,0.8,0)), buffColor, 20, 0.09, 0.7);
+    burst(player.mesh.position.clone().add(new THREE.Vector3(0,2.0,0)), 0xFFFFFF, 10, 0.08, 0.5);
+    // Ring pulse
+    const pGeo = new THREE.TorusGeometry(0.5, 0.12, 8, 32);
+    const pMat = new THREE.MeshBasicMaterial({color:buffColor, transparent:true, opacity:0.9, depthWrite:false});
+    const pRing = new THREE.Mesh(pGeo, pMat);
+    pRing.rotation.x = Math.PI/2;
+    pRing.position.copy(player.mesh.position).setY(0.1);
+    scene.add(pRing);
+    let pt=0; const ptick=()=>{ pt+=0.016; pRing.scale.setScalar(1+pt*14); pMat.opacity=Math.max(0,0.9-pt*2.5); if(pt<0.36) requestAnimationFrame(ptick); else scene.remove(pRing); };
+    requestAnimationFrame(ptick);
     return;
   }
 
@@ -11046,11 +11249,18 @@ function damagePlayer(amount){
       player.robotUltActive = false;
       if(player.robotShieldMesh){ player.mesh.remove(player.robotShieldMesh); player.robotShieldMesh = null; }
       if(player.robotShieldRing){ player.mesh.remove(player.robotShieldRing); player.robotShieldRing = null; }
+      // Reset: can start accumulating 8 charges again
+      player.robotUltCharges = 0;
+      player.activeSkillCooldown = 0;
       burst(player.mesh.position.clone().add(new THREE.Vector3(0,1.2,0)), 0x00AAFF, 16, 0.10, 0.6);
     }
     if(amount <= 0) return;
   }
 
+  // ── Minotaur: 60% damage reduction while dashing (ult) ──
+  if(player.heroId === 'minotaur' && player.minotaurDashing){
+    amount *= 0.40; // -60% damage taken during ult dash
+  }
   // ── Minotaur passive: 30% damage reduction when HP < 30% ──
   if(player.heroId === 'minotaur' && player.hp < player.maxHp * 0.30){
     amount *= 0.70;
@@ -11058,8 +11268,6 @@ function damagePlayer(amount){
       player.minotaurShieldActive = true;
       burst(player.mesh.position.clone().add(new THREE.Vector3(0,1,0)), 0xCC8844, 10, 0.09, 0.5);
     }
-    // If minotaur was dashing with shield: -90% total
-    if(player.minotaurDashing) amount *= 0.40; // already had 70% so ~90% total
   } else { player.minotaurShieldActive = false; }
 
   // ── Rat King passive: spawn a rat when damaged ──
@@ -11385,37 +11593,53 @@ function updatePlayer(dt){
     }
   }
 
-  // ── Ice Lizard: frost breath ult ──
+  // ── Ice Lizard: frost aura ult ──
   if(_heroId === 'ice_lizard' && player.iceLizardBreathTimer > 0){
     player.iceLizardBreathTimer -= dt;
     if(player.iceLizardBreathTimer <= 0){
       player.iceLizardBreathTimer = 0;
       player.speed = player.baseSpeed || player.speed / 1.2;
+      // Restore attack speed
+      if(player._iceLizardOrigFireRate){ player.fireRate = player._iceLizardOrigFireRate; player._iceLizardOrigFireRate = null; }
     } else {
-      // Frost cone damage to enemies forward
-      const breathDir = player.aim.clone().normalize();
-      const breathRange = 6.8; // 2x normal attack range
-      const breathAngle = Math.PI * 0.22; // ~2/3 of DK width
+      // 360° frost aura — damages all nearby enemies
+      const breathRange = 7.5;
       const breathDmg = player.damage * 0.5 * dt;
-      for(const e of enemies){
+      for(let ei=enemies.length-1;ei>=0;ei--){
+        const e = enemies[ei];
         const toE = e.mesh.position.clone().sub(player.mesh.position).setY(0);
-        const dist = toE.length();
-        if(dist < breathRange){
-          const angle = breathDir.angleTo(toE.normalize());
-          if(angle < breathAngle){
-            e.hp -= breathDmg;
-            e.hitFlash = 0.3;
-            e.slowTimer = Math.max(e.slowTimer||0, 0.4);
-            e.slowMult = 0.30; // 70% slow
-            if(Math.random() < 0.05) createTrail(e.mesh.position.clone().add(new THREE.Vector3(0,0.5,0)),0xAAEEFF,0.12);
-            if(e.hp<=0){ killEnemyAt(enemies.indexOf(e)); }
-          }
+        if(toE.length() < breathRange){
+          e.hp -= breathDmg;
+          e.hitFlash = 0.3;
+          e.slowTimer = Math.max(e.slowTimer||0, 0.5);
+          e.slowMult = 0.20; // 80% slow
+          if(Math.random() < 0.04) createTrail(e.mesh.position.clone().add(new THREE.Vector3(0,0.5,0)),0xAAEEFF,0.12);
+          if(e.hp<=0){ killEnemyAt(ei); }
         }
       }
-      // Visual frost cone particles
-      if(Math.random() < 0.4){
-        const p = player.mesh.position.clone().add(new THREE.Vector3(breathDir.x*(2+Math.random()*4),0.8+Math.random(),breathDir.z*(2+Math.random()*4)));
-        burst(p, 0xCCEEFF, 3, 0.07, 0.25);
+      // Scattered frost particles — more dense and visible
+      if(Math.random() < 0.80){
+        const a = Math.random()*Math.PI*2;
+        const rd = 1+Math.random()*6;
+        const p = player.mesh.position.clone().add(new THREE.Vector3(Math.sin(a)*rd,0.4+Math.random()*1.2,Math.cos(a)*rd));
+        burst(p, Math.random()<0.5?0xAADDFF:0xCCEEFF, 3, 0.07, 0.25);
+      }
+      // Frost trail from player center
+      if(Math.random() < 0.35){
+        const a2 = Math.random()*Math.PI*2;
+        const p2 = player.mesh.position.clone().add(new THREE.Vector3(Math.sin(a2)*0.6,0.8+Math.random()*0.6,Math.cos(a2)*0.6));
+        burst(p2, 0xFFFFFF, 2, 0.05, 0.18);
+      }
+      // Pulsing ice ring every 0.35s
+      if(!player._iceLizardRingTimer) player._iceLizardRingTimer = 0;
+      player._iceLizardRingTimer -= dt;
+      if(player._iceLizardRingTimer <= 0){
+        player._iceLizardRingTimer = 0.35;
+        const rGeo = new THREE.TorusGeometry(breathRange*0.65, 0.07, 6, 32);
+        const rMat = new THREE.MeshBasicMaterial({color:0xAAEEFF,transparent:true,opacity:0.75,depthWrite:false});
+        const rMesh = new THREE.Mesh(rGeo,rMat); rMesh.rotation.x=Math.PI/2;
+        rMesh.position.copy(player.mesh.position).setY(0.3); scene.add(rMesh);
+        let rT=0; const rTick=()=>{ rT+=0.016; rMesh.scale.setScalar(1+rT*2); rMat.opacity=Math.max(0,0.75-rT*2.8); if(rT<0.28) requestAnimationFrame(rTick); else scene.remove(rMesh); }; requestAnimationFrame(rTick);
       }
     }
   }
@@ -11712,6 +11936,9 @@ function updatePlayer(dt){
         dashMarker.visible=false;
       } else if(player.heroId === 'necromancer'){
         // Некромант: показываем только дугу, стрелку прячем
+        dashMarker.visible=false;
+      } else if(player.heroId === 'leprechaun'){
+        // Лепрекон: стрелку прячем (только дуга броска)
         dashMarker.visible=false;
       } else {
         // Default dash arrow
@@ -12349,7 +12576,7 @@ function updateProjectiles(arr,dt,hitEnemy){
           }
           // ── Rocket explosion (robot/gnomemech): AoE ──
           if(p._isRocket){
-            const BLAST_R = 3.8; // bigger splash radius
+            const BLAST_R = 5.7; // +50% bigger splash radius (was 3.8)
             const hitPos = e.mesh.position.clone();
             for(let rj=enemies.length-1;rj>=0;rj--){
               if(rj===j) continue;
@@ -12361,13 +12588,39 @@ function updateProjectiles(arr,dt,hitEnemy){
                 // Knockback from explosion center
                 const kDir = enemies[rj].mesh.position.clone().sub(hitPos).setY(0);
                 if(kDir.lengthSq()>0.001) kDir.normalize();
-                enemies[rj].mesh.position.addScaledVector(kDir, 2.0*(1-rd/BLAST_R));
+                enemies[rj].mesh.position.addScaledVector(kDir, 2.5*(1-rd/BLAST_R));
                 if(enemies[rj].hp<=0) killEnemyAt(rj);
               }
             }
-            burst(hitPos.clone().add(new THREE.Vector3(0,0.5,0)), 0xFF5500, 22, 0.12, 0.8);
-            burst(hitPos.clone().add(new THREE.Vector3(0,0.5,0)), 0xFFAA00, 10, 0.09, 0.55);
-            burst(hitPos.clone().add(new THREE.Vector3(0,0.5,0)), 0xFFFFFF, 6,  0.06, 0.35);
+            burst(hitPos.clone().add(new THREE.Vector3(0,0.5,0)), 0xFF5500, 30, 0.14, 1.0);
+            burst(hitPos.clone().add(new THREE.Vector3(0,0.5,0)), 0xFFAA00, 14, 0.10, 0.65);
+            burst(hitPos.clone().add(new THREE.Vector3(0,0.5,0)), 0xFFFFFF, 8,  0.07, 0.40);
+            // Fire zone on ground — lasts 1 second, deals DPS
+            const fireZonePos = hitPos.clone().setY(0.05);
+            const fzGeo = new THREE.CircleGeometry(BLAST_R * 0.55, 24);
+            const fzMat = new THREE.MeshBasicMaterial({color:0xFF4400, transparent:true, opacity:0.55, depthWrite:false, side:THREE.DoubleSide});
+            const fzMesh = new THREE.Mesh(fzGeo, fzMat);
+            fzMesh.rotation.x = -Math.PI/2;
+            fzMesh.position.copy(fireZonePos);
+            scene.add(fzMesh);
+            const _fzR = BLAST_R * 0.55;
+            const _fzDmg = (p.damage || 20) * 0.15;
+            let fzTimer = 1.0;
+            const fzTick = () => {
+              fzTimer -= 0.033;
+              fzMat.opacity = Math.max(0, 0.55 * (fzTimer));
+              // Burn enemies in zone
+              for(let fi=enemies.length-1;fi>=0;fi--){
+                if(distanceXZ(enemies[fi].mesh.position, fireZonePos) < _fzR){
+                  enemies[fi].hp -= _fzDmg; enemies[fi].hitFlash = 0.1;
+                  if(Math.random()<0.15) burst(enemies[fi].mesh.position.clone().add(new THREE.Vector3(0,0.5,0)), 0xFF4400, 2, 0.06, 0.18);
+                  if(enemies[fi].hp<=0) killEnemyAt(fi);
+                }
+              }
+              if(Math.random()<0.4) burst(fireZonePos.clone().add(new THREE.Vector3((Math.random()-.5)*_fzR*1.5,0.3,(Math.random()-.5)*_fzR*1.5)), 0xFF6600, 2, 0.07, 0.22);
+              if(fzTimer > 0) setTimeout(fzTick, 33); else scene.remove(fzMesh);
+            };
+            setTimeout(fzTick, 33);
           }
           // ── Gold bag explosion: bigger radius, knockback + spawn 5 coins ──
           if(p._goldBag){
@@ -14088,6 +14341,7 @@ dashBtn.addEventListener('pointerdown',e=>{
   if(player.heroId==='frost_huntress') startIceblinkCharge();
   if(player.heroId==='shadow_alchemist') startBombAim();
   else if(player.heroId==='leprechaun') startBombAim();
+  else if(player.heroId==='spider_queen') startBombAim();
   else if(player.heroId==='necromancer') startSummonAim();
   // blood_priest и slowfield — скилл сразу при нажатии, не нужно держать
   else if(player.heroId==='blood_priest' || heroData().abilityType==='slowfield'){
@@ -14102,7 +14356,7 @@ dashBtn.addEventListener('pointermove',e=>{
   const rawDy = e.clientY-dashAim.centerY;
   _skillJoyUpdate(rawDx, rawDy);
   // Алхимик: обновляем дугу по направлению и дальности джойстика
-  if((player.heroId==='shadow_alchemist' || player.heroId==='leprechaun') && player.bombAiming){
+  if((player.heroId==='shadow_alchemist' || player.heroId==='leprechaun' || player.heroId==='spider_queen') && player.bombAiming){
     // Используем сырое расстояние в пикселях (макс ~80px = полная дальность)
     const rawLen = Math.hypot(rawDx, rawDy);
     player.bombPower = Math.min(rawLen / 80, 1.0);
@@ -14144,10 +14398,11 @@ function releaseDashAim(e){
     _skillJoyHide();
     return;
   }
-  if((player.heroId==='shadow_alchemist' || player.heroId==='leprechaun') && player.bombAiming){
+  if((player.heroId==='shadow_alchemist' || player.heroId==='leprechaun' || player.heroId==='spider_queen') && player.bombAiming){
     const dirVec = new THREE.Vector3(dashAim.x,0,dashAim.y);
     dirVec.normalize().applyAxisAngle(new THREE.Vector3(0,1,0),cameraAngle);
     if(player.heroId==='leprechaun') releaseLeprechaunBag(dirVec, player.bombPower||0.5);
+    else if(player.heroId==='spider_queen') releaseSpiderWebThrow(dirVec, player.bombPower||0.5);
     else releaseBombThrow(dirVec, player.bombPower||0.5);
     dashAim.active=false; dashAim.pointerId=null;
     _skillJoyHide();
@@ -20389,67 +20644,13 @@ function installSpiderQueenUlt() {
   window.useHeroSkill = function(dir) {
     const hero = (typeof heroData === 'function') ? heroData() : {};
     if (hero.abilityType === 'spiderqueen') {
-      // Власна логіка — не передаємо у оригінал
+      // Keyboard shortcut: throw web directly in aim direction
       if (!player.alive || player.activeSkillCooldown > 0) return;
-      player.activeSkillCooldown = hero.skillCd || 14;
-
-      // Спавнимо 4 маленьких павуки навколо гравця
-      const angles = [0, Math.PI/2, Math.PI, Math.PI*1.5];
-      angles.forEach((ang, idx) => {
-        setTimeout(() => {
-          if (!player.alive) return;
-          const spawnRadius = 1.2 + idx * 0.3;
-          const spawnPos = player.mesh.position.clone().add(
-            new THREE.Vector3(Math.sin(ang) * spawnRadius, 0, Math.cos(ang) * spawnRadius)
-          );
-
-          const mesh = createMiniSpider();
-          mesh.position.copy(spawnPos);
-          mesh.scale.setScalar(0.85);
-          alignMeshToGround(mesh);
-          mesh._groundY = mesh.position.y;
-          scene.add(mesh);
-
-          // HP-бар
-          const barEl  = document.createElement('div');
-          const barFill = document.createElement('div');
-          barEl.className = 'enemyBar';
-          barFill.className = 'enemyBarFill';
-          barEl.appendChild(barFill);
-          document.getElementById('worldUi').appendChild(barEl);
-
-          const miniSpider = {
-            type:       'mini_spider',
-            mesh,
-            hp:         30,
-            maxHp:      30,
-            damage:     10,
-            speed:      7.0,
-            radius:     0.35,
-            meleeRange: 0.70,
-            life:       20,      // живе 20 сек
-            attackCd:   0,
-            attackAnim: 0,
-            hitFlash:   0,
-            barOffset:  0.6,
-            barEl,
-            barFill
-          };
-          allies.push(miniSpider);
-
-          // Ефект появи
-          burst(spawnPos.clone().add(new THREE.Vector3(0,.5,0)), 0x880088, 10, .08, .5);
-        }, idx * 120);
-      });
-
-      // Ефект на гравці
-      burst(
-        player.mesh.position.clone().add(new THREE.Vector3(0,1.2,0)),
-        0xFF0055, 20, .10, .7
-      );
+      const throwDir = (dir && dir.lengthSq && dir.lengthSq()>0.01) ? dir : player.aim.clone();
+      releaseSpiderWebThrow(throwDir, 0.7);
       return;
     }
-    // Всі інші герої — оригінальна логіка
+    // All other heroes — original logic
     return _origUseSkill.apply(this, arguments);
   };
   console.log('✅ Spider Queen ult installed');
