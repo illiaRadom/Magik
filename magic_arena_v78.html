@@ -7014,6 +7014,14 @@ function resetPlayerStats(){
   player.charging = false; player.chargeTime = 0;
   player.maxChargeTime = 2.0;
   if(player.chargeRing){ player.mesh?.remove(player.chargeRing); player.chargeRing=null; }
+  // Reset Gnome Mech charge/shield/guns
+  player.gnomeMechHitCharge = 0;
+  player.gnomeMechShield = 0;
+  player.gnomeMechGuns = [];
+  // Reset Samurai ult aura
+  if(player._samuraiAura){ player.mesh?.remove(player._samuraiAura); player._samuraiAura=null; }
+  player.samuraiUltTimer = 0;
+  player.samuraiStrikeIdx = 0;
   rebuildPlayerMesh();
   applyElementVisualsToMesh(player.mesh);
 }
@@ -8501,13 +8509,13 @@ const heroAttackProfiles = {
   frost_huntress:{ melee:false, rateMulti:1.45, dmgMulti:1.25, projLife:3.2, projSpeed:22, projColor:0x06b6d4 },
   shadow_alchemist:{ melee:false, rateMulti:0.95, dmgMulti:1.1, projLife:2.2, projSpeed:13, projColor:0x16a34a, pierce:99 },
   archmage:      { melee:false, rateMulti:0.85, dmgMulti:1.2,  projLife:2.0, projSpeed:13, projColor:0x3b82f6 },
-  gnome_mech:    { melee:true,  radius:4.0, halfAng:Math.PI*0.70, rateMulti:0.35, dmgMulti:1.5,  swingColor:0xCD853F },
+  gnome_mech:    { melee:true,  radius:5.5, halfAng:Math.PI*0.70, rateMulti:0.22, dmgMulti:1.5,  swingColor:0xCD853F },
   samurai:       { melee:true,  radius:3.2, halfAng:Math.PI*0.42, rateMulti:1.0,  dmgMulti:1.0,  swingColor:0xD4AF37 },
   machoman:      { melee:true,  radius:3.6, halfAng:Math.PI*0.22, rateMulti:0.85, dmgMulti:1.0,  swingColor:0xFF6060 },
   miner:         { melee:true,  radius:2.8, halfAng:Math.PI*0.35, rateMulti:0.9,  dmgMulti:1.0,  swingColor:0x4B8BB0 },
   ice_lizard:    { melee:true,  radius:3.4, halfAng:Math.PI,      rateMulti:0.9,  dmgMulti:1.0,  swingColor:0x88CCFF },
   rat_king:      { melee:true,  radius:2.8, halfAng:Math.PI*0.38, rateMulti:0.9,  dmgMulti:1.0,  swingColor:0x888888 },
-  yeti:          { melee:false, rateMulti:0.9,  dmgMulti:1.0,  projLife:1.8, projSpeed:12, projColor:0xAAEEFF },
+  yeti:          { melee:false, rateMulti:0.9,  dmgMulti:1.0,  projLife:1.0, projSpeed:11, projColor:0xAAEEFF },
   leprechaun:    { melee:false, rateMulti:1.1,  dmgMulti:1.0,  projLife:1.6, projSpeed:11, projColor:0xFFD700 },
   robot:         { melee:false, rateMulti:0.75, dmgMulti:1.0,  projLife:2.5, projSpeed:18, projColor:0xAAAAAA },
   spider_queen:  { melee:false, rateMulti:1.0,  dmgMulti:1.0,  projLife:2.0, projSpeed:13, projColor:0xDDDDDD },
@@ -8919,29 +8927,52 @@ function firePlayerSpell(){
       const sw = origin.clone().add(new THREE.Vector3(aimDir.x*2.0,1.0,aimDir.z*2.0));
       burst(sw, 0xCD853F, hitAny?18:9, 0.14, 0.85);
       burst(sw, 0xFFD700, hitAny?8:4, 0.10, 0.55);
+      // Charge ult by successful hits
+      if(hitAny){
+        if(!player.gnomeMechHitCharge) player.gnomeMechHitCharge = 0;
+        if(player.gnomeMechHitCharge < 5){
+          player.gnomeMechHitCharge++;
+          burst(player.mesh.position.clone().add(new THREE.Vector3(0,1.8,0)), 0x00CCFF, 4+player.gnomeMechHitCharge*2, 0.07, 0.35);
+        }
+      }
 
     } else if(heroId === 'samurai'){
       // Alternating wide (slice) / long (thrust) strikes
       if(player.samuraiStrikeIdx == null) player.samuraiStrikeIdx = 0;
       const isWide = (player.samuraiStrikeIdx % 2 === 0);
       player.samuraiStrikeIdx++;
-      const sHalfAng = isWide ? halfAng         : halfAng * 0.5;
-      const sRadius  = isWide ? r               : r * 1.5;
-      const sDmg     = isWide ? dmg             : dmg * 1.5;
+      const sHalfAng = isWide ? halfAng         : halfAng * 0.4; // narrow = tighter
+      const sRadius  = isWide ? r               : r * 1.6;       // long = further
+      const sDmg     = isWide ? dmg             : dmg * 1.5;     // long = 50% more dmg
       const sCol     = isWide ? 0xD4AF37        : 0xFFFFAA;
       const hitAny = _doMeleeArc(sRadius, sHalfAng, aimAngle, sDmg, sCol);
       createSwashEffect(new THREE.Vector3(origin.x,1.0,origin.z), aimAngle, sHalfAng, sRadius*0.90, sCol);
-      const sw = origin.clone().add(new THREE.Vector3(aimDir.x*(isWide?1.5:2.2),1.0,aimDir.z*(isWide?1.5:2.2)));
+      const sw = origin.clone().add(new THREE.Vector3(aimDir.x*(isWide?1.5:2.4),1.0,aimDir.z*(isWide?1.5:2.4)));
       burst(sw, sCol, hitAny?14:7, 0.09, 0.52);
-      // Ult: send golden wave
+      // Ult: send golden waves — wide attack = wide wave, narrow attack = long narrow wave
       if(player.samuraiUltTimer > 0){
-        const waveSegs = isWide ? 5 : 3;
-        const waveDmg  = sDmg * 0.5;
-        for(let wi=0; wi<waveSegs; wi++){
-          const wAngle = aimAngle - sHalfAng + (wi/(Math.max(1,waveSegs-1)))*sHalfAng*2;
-          const wDir = new THREE.Vector3(Math.sin(wAngle),0,Math.cos(wAngle)).normalize();
-          const wPos = origin.clone().add(new THREE.Vector3(wDir.x,1.0,wDir.z));
-          createProjectile(wPos, wDir, 'player', {size:0.18,color:0xFFD700,speed:14,damage:waveDmg,life:sRadius/14,remainingHits:1});
+        if(isWide){
+          // Wide wave: many segments, shorter range, lower damage
+          const waveSegs = 7;
+          const wAngleSpan = sHalfAng * 2;
+          const waveDmg = sDmg * 0.40;
+          for(let wi=0; wi<waveSegs; wi++){
+            const wAngle = aimAngle - sHalfAng + (wi/(waveSegs-1))*wAngleSpan;
+            const wDir = new THREE.Vector3(Math.sin(wAngle),0,Math.cos(wAngle)).normalize();
+            const wPos = origin.clone().add(new THREE.Vector3(wDir.x,1.0,wDir.z));
+            createProjectile(wPos, wDir, 'player', {size:0.22,color:0xFFD700,speed:12,damage:waveDmg,life:0.55,remainingHits:1});
+          }
+        } else {
+          // Narrow long wave: 3 tight segments, longer range, higher damage
+          const waveSegs = 3;
+          const wAngleSpan = sHalfAng * 2;
+          const waveDmg = sDmg * 0.65;
+          for(let wi=0; wi<waveSegs; wi++){
+            const wAngle = aimAngle - sHalfAng + (wi/(Math.max(1,waveSegs-1)))*wAngleSpan;
+            const wDir = new THREE.Vector3(Math.sin(wAngle),0,Math.cos(wAngle)).normalize();
+            const wPos = origin.clone().add(new THREE.Vector3(wDir.x,1.0,wDir.z));
+            createProjectile(wPos, wDir, 'player', {size:0.15,color:0xFFFAA0,speed:18,damage:waveDmg,life:0.95,remainingHits:1});
+          }
         }
         burst(origin.clone().add(new THREE.Vector3(0,1.0,0)), 0xFFD700, 8, 0.08, 0.4);
       }
@@ -9123,14 +9154,14 @@ function firePlayerSpell(){
       burst(muzzle, 0xfbbf24, 6, 0.05, 0.28);
 
     } else if(heroId === 'yeti'){
-      // Ice chunk (octahedron)
-      const iceGeo = new THREE.OctahedronGeometry(0.28,0);
+      // Ice chunk (octahedron) — bigger but shorter range, always slows
+      const iceGeo = new THREE.OctahedronGeometry(0.48,0);
       const iceMat = new THREE.MeshBasicMaterial({color:0xAAEEFF});
       const iceMesh = new THREE.Mesh(iceGeo,iceMat);
       iceMesh.position.copy(muzzle);
       scene.add(iceMesh);
-      projectiles.push({mesh:iceMesh,dir:aimDir.clone(),speed:12,damage:dmg,owner:'player',life:1.8,radius:0.30,trailColor:0x88DDFF,trailTimer:0,remainingHits:1,_spin:true,_yetiIce:true});
-      burst(muzzle,0xAAEEFF,8,0.08,0.40);
+      projectiles.push({mesh:iceMesh,dir:aimDir.clone(),speed:11,damage:dmg,owner:'player',life:1.0,radius:0.52,trailColor:0x88DDFF,trailTimer:0,remainingHits:1,_spin:true,_yetiIce:true});
+      burst(muzzle,0xAAEEFF,10,0.10,0.50);
 
     } else if(heroId === 'leprechaun'){
       // Random coin count
@@ -10188,7 +10219,14 @@ function releaseSummon(dirVec, power){
 function useHeroSkill(dir){
   const hero = heroData();
   const v=dir?.clone?.()??player.aim.clone();
-  if(!player.alive||pausedForUpgrade||player.activeSkillCooldown>0) return;
+  // Gnome Mech ult needs 5 hits, not cooldown
+  if(!player.alive||pausedForUpgrade) return;
+  const _skillHeroId = player.heroId || settings.hero;
+  if(_skillHeroId === 'gnome_mech'){
+    if((player.gnomeMechHitCharge||0) < 5) return;
+  } else {
+    if(player.activeSkillCooldown>0) return;
+  }
 
   const heroId = player.heroId || settings.hero;
 
@@ -10197,8 +10235,8 @@ function useHeroSkill(dir){
   // ══════════════════════════════════════════════════════
 
   if(heroId === 'gnome_mech'){
-    // Gatling Fury: spawn 3 gatling guns, add 50 shield each
-    player.activeSkillCooldown = hero.skillCd;
+    // Gatling Fury: spawn 3 gatling guns, add 50 shield each — requires 5 hit charges
+    player.gnomeMechHitCharge = 0; // reset charge
     if(!player.gnomeMechShield) player.gnomeMechShield = 0;
     if(!player.gnomeMechGuns)   player.gnomeMechGuns   = [];
     const gunsToAdd = Math.min(3, 3 - player.gnomeMechGuns.length);
@@ -10210,8 +10248,20 @@ function useHeroSkill(dir){
       gunG.add(barrel);
       const body = new THREE.Mesh(new THREE.BoxGeometry(0.25,0.2,0.2), new THREE.MeshBasicMaterial({color:0x666666}));
       gunG.add(body);
-      gunG.position.set(Math.cos(angle)*1.2, 0.8, Math.sin(angle)*1.2);
+      // Start retracted, extend outward
+      gunG.position.set(Math.cos(angle)*0.3, 0.8, Math.sin(angle)*0.3);
+      gunG.scale.setScalar(0.1);
       player.mesh.add(gunG);
+      const targetX = Math.cos(angle)*1.2, targetZ = Math.sin(angle)*1.2;
+      let extT = 0;
+      const extTick = () => {
+        extT += 0.05;
+        const t = Math.min(1, extT);
+        gunG.position.set(Math.cos(angle)*(0.3+0.9*t), 0.8, Math.sin(angle)*(0.3+0.9*t));
+        gunG.scale.setScalar(0.1 + 0.9*t);
+        if(t < 1) requestAnimationFrame(extTick);
+      };
+      requestAnimationFrame(extTick);
       player.gnomeMechGuns.push({mesh:gunG, fireTimer:0, angle});
     }
     const shieldAdded = gunsToAdd * 50;
@@ -10222,21 +10272,22 @@ function useHeroSkill(dir){
   }
 
   if(heroId === 'yeti'){
-    // Snowball: rolling ball that grows and absorbs enemies
+    // Snowball: starts small, grows as it flies, absorbs enemies inside
     player.activeSkillCooldown = hero.skillCd;
     const aimDir = v.clone().normalize();
-    const snowGeo = new THREE.SphereGeometry(0.4, 12, 12);
-    const snowMat = new THREE.MeshBasicMaterial({color:0xEEEEFF});
+    const snowGeo = new THREE.SphereGeometry(0.2, 12, 12);
+    const snowMat = new THREE.MeshBasicMaterial({color:0xEEEEFF,transparent:true,opacity:0.92});
     const snowMesh = new THREE.Mesh(snowGeo, snowMat);
     const startPos = player.mesh.position.clone().add(new THREE.Vector3(aimDir.x*1.5,0.4,aimDir.z*1.5));
     snowMesh.position.copy(startPos);
     scene.add(snowMesh);
     const sb = {
       mesh:snowMesh, dir:aimDir.clone(), speed:7.0,
-      damage:player.damage*0.6, radius:0.45, life:4.0,
+      damage:player.damage*0.8, radius:0.22, life:5.0, _baseLife:5.0,
       absorbed:0, _lockY:0.4,
       owner:'player', trailColor:0xCCEEFF, trailTimer:0, remainingHits:99,
-      hitEnemies:new Set(), _snowball:true
+      hitEnemies:new Set(), _snowball:true,
+      capturedEnemies:[] // enemies trapped inside
     };
     projectiles.push(sb);
     burst(startPos, 0xEEEEFF, 16, 0.12, 0.7);
@@ -10874,10 +10925,37 @@ function updatePlayer(dt){
   // ══════════════════════════════════════════════════════
   const _heroId = player.heroId || settings.hero;
 
-  // ── Samurai: ult timer ──
-  if(_heroId === 'samurai' && player.samuraiUltTimer > 0){
-    player.samuraiUltTimer -= dt;
-    if(player.samuraiUltTimer <= 0) player.samuraiUltTimer = 0;
+  // ── Samurai: ult timer + yellow aura ──
+  if(_heroId === 'samurai'){
+    if(player.samuraiUltTimer > 0){
+      player.samuraiUltTimer -= dt;
+      if(player.samuraiUltTimer <= 0){
+        player.samuraiUltTimer = 0;
+        // Remove aura on ult end
+        if(player._samuraiAura){ scene.remove(player._samuraiAura); player._samuraiAura = null; }
+      } else {
+        // Spawn/maintain golden aura ring
+        if(!player._samuraiAura){
+          const aGeo = new THREE.TorusGeometry(0.85,0.08,8,32);
+          const aMat = new THREE.MeshBasicMaterial({color:0xFFD700,transparent:true,opacity:0.75,depthWrite:false});
+          player._samuraiAura = new THREE.Mesh(aGeo,aMat);
+          player._samuraiAura.rotation.x = Math.PI/2;
+          player.mesh.add(player._samuraiAura);
+          player._samuraiAura.position.set(0,0.05,0);
+        }
+        // Pulsing opacity
+        if(player._samuraiAura){
+          player._samuraiAura.material.opacity = 0.55 + Math.sin(Date.now()*0.008)*0.25;
+        }
+        // Occasional golden sparks
+        if(Math.random() < 0.12){
+          burst(player.mesh.position.clone().add(new THREE.Vector3(0,0.8,0)), 0xFFD700, 3, 0.06, 0.3);
+        }
+      }
+    }
+    if(player.samuraiUltTimer <= 0 && player._samuraiAura){
+      scene.remove(player._samuraiAura); player.mesh.remove(player._samuraiAura); player._samuraiAura = null;
+    }
   }
 
   // ── Machoman: ult timer ──
@@ -11722,6 +11800,38 @@ function updateBombs(dt){
 function updateProjectiles(arr,dt,hitEnemy){
   for(let i=arr.length-1;i>=0;i--){
     const p=arr[i]; p.life-=dt; p.mesh.position.addScaledVector(p.dir,p.speed*dt); p.trailTimer-=dt;
+    // ── Snowball: grow over time + carry captured enemies ──
+    if(p._snowball){
+      const elapsed = (p._baseLife||5.0) - p.life;
+      const growR = 0.22 + elapsed * 0.28 + p.absorbed * 0.20;
+      p.radius = growR;
+      p.mesh.scale.setScalar(growR / 0.20);
+      // Carry captured enemies
+      if(p.capturedEnemies && p.capturedEnemies.length>0){
+        for(const ce of p.capturedEnemies){
+          if(ce.mesh) ce.mesh.position.copy(p.mesh.position).add(new THREE.Vector3(0,growR*0.5,0));
+        }
+      }
+      // If snowball expires, explode: release enemies with slow + damage
+      if(p.life <= 0){
+        if(p.capturedEnemies && p.capturedEnemies.length>0){
+          for(const ce of p.capturedEnemies){
+            if(!ce.mesh) continue;
+            ce._snowballCaptured = false;
+            ce.slowTimer = Math.max(ce.slowTimer||0, 3.0);
+            ce.slowMult  = Math.min(ce.slowMult||1, 0.45);
+            ce.hp -= p.damage * 0.5;
+            ce.hitFlash = 1;
+            burst(ce.mesh.position.clone().add(new THREE.Vector3(0,0.8,0)), 0xAAEEFF, 10, 0.09, 0.5);
+            showDamageNumber(ce.mesh.position.clone().add(new THREE.Vector3(0,1.2,0)), p.damage*0.5, 'normal');
+            if(ce.hp <= 0) killEnemyAt(enemies.indexOf(ce));
+          }
+        }
+        burst(p.mesh.position.clone().add(new THREE.Vector3(0,0.4,0)), 0xEEEEFF, 22, 0.14, 0.8);
+        burst(p.mesh.position.clone().add(new THREE.Vector3(0,0.4,0)), 0x88CCFF, 12, 0.10, 0.5);
+        scene.remove(p.mesh); arr.splice(i,1); continue;
+      }
+    }
     // Homing nut behavior
     if(p._homing && enemies.length>0){
       let tgt=enemies[0], tDist=distanceXZ(p.mesh.position,enemies[0].mesh.position);
@@ -11772,15 +11882,15 @@ function updateProjectiles(arr,dt,hitEnemy){
             player.activeSkillCooldown = Math.max(0, player.activeSkillCooldown - 0.3);
             burst(p.mesh.position.clone(), 0x93c5fd, 6, 0.06, 0.3);
           }
-          // ── Yeti passive: 10% slow on any hit ──
+          // ── Yeti passive: always slows on any hit ──
           if(p.owner==='player' && player.heroId==='yeti'){
             e.slowTimer = Math.max(e.slowTimer||0, 1.5);
-            e.slowMult  = Math.min(e.slowMult||1, 0.90);
+            e.slowMult  = Math.min(e.slowMult||1, 0.80);
           }
-          // ── Yeti ice chunk: always slows ──
+          // ── Yeti ice chunk: always slows strongly ──
           if(p._yetiIce){
-            e.slowTimer = Math.max(e.slowTimer||0, 2.0);
-            e.slowMult  = Math.min(e.slowMult||1, 0.90);
+            e.slowTimer = Math.max(e.slowTimer||0, 2.5);
+            e.slowMult  = Math.min(e.slowMult||1, 0.60);
           }
           // ── Ice spike: freeze 1 second (zero damage already set) ──
           if(p._iceSpike){
@@ -11828,16 +11938,17 @@ function updateProjectiles(arr,dt,hitEnemy){
               createProjectile(cPos,cDir,'player',{size:0.16,color:0xFFD700,speed:8,damage:player.damage,life:1.2,remainingHits:1});
             }
           }
-          // ── Snowball: grow + absorb enemies ──
-          if(p._snowball){
+          // ── Snowball: grow + capture enemies inside ──
+          if(p._snowball && !e._snowballCaptured){
             p.absorbed = (p.absorbed||0) + 1;
-            p.life += 0.8; // extend life per absorbed enemy
-            const newR = 0.45 + p.absorbed * 0.15;
-            p.mesh.scale.setScalar(newR/0.45);
-            p.radius = newR;
-            // Move enemy with snowball briefly, then release
-            e.slowTimer = Math.max(e.slowTimer||0, p.life + 0.5);
-            e.slowMult = 0.50;
+            p.life += 1.2; // extend life per captured enemy
+            e._snowballCaptured = true;
+            if(!p.capturedEnemies) p.capturedEnemies = [];
+            p.capturedEnemies.push(e);
+            // Freeze enemy movement while captured
+            e.slowTimer = p.life + 2.0;
+            e.slowMult = 0.0; // fully frozen inside ball
+            burst(p.mesh.position.clone(), 0xDDEEFF, 12, 0.10, 0.55);
           }
           // ── Blood Priest passive: vampirism on ranged hit ──
           if(p.owner === 'player' && player.heroId === 'blood_priest'){
@@ -12665,9 +12776,35 @@ function updateCamera(dt){
 function updateHUD(){
   const hp = Math.max(0,Math.round(player.hp));
   const mhp = Math.round(player.maxHp);
-  hpEl.textContent=hp;
-  maxHpEl.textContent=mhp;
-  if(hudHpBar) hudHpBar.style.width=`${Math.min(100,hp/mhp*100)}%`;
+  const isGnome = (player.heroId||settings.hero) === 'gnome_mech';
+  const shield = isGnome ? Math.round(player.gnomeMechShield||0) : 0;
+  if(isGnome && shield > 0){
+    hpEl.textContent = hp;
+    maxHpEl.textContent = mhp + '+' + shield + '🛡';
+    hpEl.style.color = '#4af';
+    maxHpEl.style.color = '#4af';
+    if(hudHpBar){ hudHpBar.style.width=`${Math.min(100,hp/mhp*100)}%`; hudHpBar.style.background='linear-gradient(90deg,#2299ff,#66ccff)'; }
+  } else {
+    hpEl.textContent=hp; maxHpEl.textContent=mhp;
+    hpEl.style.color=''; maxHpEl.style.color='';
+    if(hudHpBar){ hudHpBar.style.width=`${Math.min(100,hp/mhp*100)}%`; hudHpBar.style.background=''; }
+  }
+  // Gnome: show hit charge progress
+  let gnomeChargeEl = document.getElementById('gnome-hit-charge');
+  if(isGnome){
+    if(!gnomeChargeEl){
+      gnomeChargeEl = document.createElement('div');
+      gnomeChargeEl.id = 'gnome-hit-charge';
+      gnomeChargeEl.style.cssText='font-size:10px;color:#4af;margin-top:3px;letter-spacing:.1em;';
+      const hudHpBlockEl = document.getElementById('hud-hp-block');
+      if(hudHpBlockEl) hudHpBlockEl.appendChild(gnomeChargeEl);
+    }
+    const charge = player.gnomeMechHitCharge||0;
+    const guns = (player.gnomeMechGuns||[]).length;
+    const pips = '⬡'.repeat(charge) + '⬢'.repeat(Math.max(0,5-charge));
+    gnomeChargeEl.textContent = `⚙ ${pips} | 🔫${guns}/3`;
+    gnomeChargeEl.style.color = charge >= 5 ? '#0f0' : '#4af';
+  } else if(gnomeChargeEl){ gnomeChargeEl.remove(); }
   // ── HP опасная зона: пульсирующее свечение при HP < 30% ──
   const hudHpBlock = document.getElementById('hud-hp-block');
   if(hudHpBlock){
@@ -12704,19 +12841,40 @@ function updateHUD(){
   const cdTimer=document.getElementById('skillCdTimer');
   const skillIconEl=document.getElementById('skillBtnIcon');
   if(cdOverlay&&cdTimer){
-    const cd=Math.max(0,player.activeSkillCooldown);
-    const maxCd=heroData().skillCd;
-    if(cd>0.05){
-      const pct=Math.min(1,cd/maxCd);
-      const deg=Math.round(pct*360);
-      cdOverlay.style.background=`conic-gradient(rgba(0,0,0,.0) ${360-deg}deg, rgba(0,0,0,.65) ${360-deg}deg)`;
-      cdTimer.style.display='flex';
-      cdTimer.textContent=cd>=1?Math.ceil(cd):'';
-      if(skillIconEl)skillIconEl.style.opacity='0.3';
+    const _isGnomeHud = (player.heroId||settings.hero) === 'gnome_mech';
+    if(_isGnomeHud){
+      // Gnome: show hit charge progress (0-5) as fill
+      const charge = player.gnomeMechHitCharge||0;
+      const ready = charge >= 5;
+      const pct = charge/5;
+      const deg = Math.round(pct*360);
+      if(!ready){
+        cdOverlay.style.background=`conic-gradient(rgba(0,170,255,.0) ${deg}deg, rgba(0,0,0,.65) ${deg}deg)`;
+        cdTimer.style.display='flex';
+        cdTimer.textContent=charge+'/5';
+        cdTimer.style.color='#4af';
+        if(skillIconEl)skillIconEl.style.opacity='0.4';
+      } else {
+        cdOverlay.style.background='conic-gradient(rgba(0,255,80,.25) 0%, rgba(0,255,80,.25) 360deg)';
+        cdTimer.style.display='none';
+        if(skillIconEl)skillIconEl.style.opacity='1';
+      }
     } else {
-      cdOverlay.style.background='conic-gradient(rgba(0,0,0,0) 0%, rgba(0,0,0,0) 360deg)';
-      cdTimer.style.display='none';
-      if(skillIconEl)skillIconEl.style.opacity='1';
+      const cd=Math.max(0,player.activeSkillCooldown);
+      const maxCd=heroData().skillCd;
+      if(cd>0.05){
+        const pct=Math.min(1,cd/maxCd);
+        const deg=Math.round(pct*360);
+        cdOverlay.style.background=`conic-gradient(rgba(0,0,0,.0) ${360-deg}deg, rgba(0,0,0,.65) ${360-deg}deg)`;
+        cdTimer.style.display='flex';
+        cdTimer.textContent=cd>=1?Math.ceil(cd):'';
+        cdTimer.style.color='';
+        if(skillIconEl)skillIconEl.style.opacity='0.3';
+      } else {
+        cdOverlay.style.background='conic-gradient(rgba(0,0,0,0) 0%, rgba(0,0,0,0) 360deg)';
+        cdTimer.style.display='none';
+        if(skillIconEl)skillIconEl.style.opacity='1';
+      }
     }
   }
 
