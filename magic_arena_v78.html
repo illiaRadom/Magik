@@ -3765,7 +3765,7 @@ const heroDefs = {
   frost_huntress:   {name:'Frost Huntress',   role:'Ranged Kiter',      abilityName:'Glacier Blink', abilityType:'iceblink',attackType:'ranged', hp:88, damage:21,speed:7.8,skillCd:4.8,color:0x06b6d4, createMesh:()=>createHeroHuntress()},
   shadow_alchemist: {name:'Shadow Alchemist', role:'Area Control',      abilityName:'Toxic Burst',   abilityType:'bomb',    attackType:'ranged', hp:94, damage:24,speed:6.7,skillCd:6.0,color:0x16a34a, createMesh:()=>createHeroAlchemist()},
   // ── NEW CHARACTERS — defined here so heroIdList includes them from start ──
-  gnome_mech:    {name:'Gnome Mech',    role:'Heavy Melee',     abilityName:'Gatling Fury',  abilityType:'corruptorb', attackType:'melee',  hp:180,damage:40,speed:4.8,skillCd:12.0,color:0x8B5A2B,maxAmmo:3, ammoCooldown:2.2, createMesh:function(){return(window.createGnomeMech||function(){return new THREE.Group()})()} },
+  gnome_mech:    {name:'Gnome Mech',    role:'Heavy Melee',     abilityName:'Gatling Fury',  abilityType:'corruptorb', attackType:'melee',  hp:180,damage:40,speed:4.8,skillCd:12.0,color:0x8B5A2B,maxAmmo:4, ammoCooldown:4.0, createMesh:function(){return(window.createGnomeMech||function(){return new THREE.Group()})()} },
   yeti:          {name:'Yeti',          role:'Ice Slinger',     abilityName:'Snowball',      abilityType:'bomb',       attackType:'ranged', hp:140,damage:25,speed:5.6,skillCd:9.0, color:0x5F9EA0,maxAmmo:4, ammoCooldown:1.2, createMesh:function(){return(window.createYeti||function(){return new THREE.Group()})()}},
   samurai:       {name:'Samurai',       role:'Blade Master',    abilityName:'Spirit Wave',   abilityType:'corruptorb', attackType:'melee',  hp:110,damage:30,speed:7.2,skillCd:6.0, color:0xD4AF37,maxAmmo:5, ammoCooldown:1.0, createMesh:function(){return(window.createSamurai||function(){return new THREE.Group()})()}},
   machoman:      {name:'Machoman',      role:'Brawler',         abilityName:'Power Surge',   abilityType:'dash',       attackType:'melee',  hp:120,damage:28,speed:7.0,skillCd:6.0, color:0xE0B080,maxAmmo:4, ammoCooldown:1.1, createMesh:function(){return(window.createMachoman||function(){return new THREE.Group()})()}},
@@ -8509,7 +8509,7 @@ const heroAttackProfiles = {
   frost_huntress:{ melee:false, rateMulti:1.45, dmgMulti:1.25, projLife:3.2, projSpeed:22, projColor:0x06b6d4 },
   shadow_alchemist:{ melee:false, rateMulti:0.95, dmgMulti:1.1, projLife:2.2, projSpeed:13, projColor:0x16a34a, pierce:99 },
   archmage:      { melee:false, rateMulti:0.85, dmgMulti:1.2,  projLife:2.0, projSpeed:13, projColor:0x3b82f6 },
-  gnome_mech:    { melee:true,  radius:5.5, halfAng:Math.PI*0.70, rateMulti:0.22, dmgMulti:1.5,  swingColor:0xCD853F },
+  gnome_mech:    { melee:true,  radius:5.5, halfAng:Math.PI*0.70, rateMulti:0.55, dmgMulti:1.5,  swingColor:0xCD853F },
   samurai:       { melee:true,  radius:3.2, halfAng:Math.PI*0.42, rateMulti:1.0,  dmgMulti:1.0,  swingColor:0xD4AF37 },
   machoman:      { melee:true,  radius:3.6, halfAng:Math.PI*0.22, rateMulti:0.85, dmgMulti:1.0,  swingColor:0xFF6060 },
   miner:         { melee:true,  radius:2.8, halfAng:Math.PI*0.35, rateMulti:0.9,  dmgMulti:1.0,  swingColor:0x4B8BB0 },
@@ -8952,7 +8952,7 @@ function firePlayerSpell(){
       // Ult: send golden waves — wide attack = wide wave, narrow attack = long narrow wave
       if(player.samuraiUltTimer > 0){
         if(isWide){
-          // Wide wave: many segments, shorter range, lower damage
+          // Wide wave: a wide flat blade arc
           const waveSegs = 7;
           const wAngleSpan = sHalfAng * 2;
           const waveDmg = sDmg * 0.40;
@@ -8960,10 +8960,23 @@ function firePlayerSpell(){
             const wAngle = aimAngle - sHalfAng + (wi/(waveSegs-1))*wAngleSpan;
             const wDir = new THREE.Vector3(Math.sin(wAngle),0,Math.cos(wAngle)).normalize();
             const wPos = origin.clone().add(new THREE.Vector3(wDir.x,1.0,wDir.z));
-            createProjectile(wPos, wDir, 'player', {size:0.22,color:0xFFD700,speed:12,damage:waveDmg,life:0.55,remainingHits:1});
+            // Wide flat wave mesh (horizontal blade shape)
+            const wMesh = new THREE.Mesh(
+              new THREE.BoxGeometry(0.65, 0.07, 0.14),
+              new THREE.MeshBasicMaterial({color:0xFFD700,transparent:true,opacity:0.88,depthWrite:false})
+            );
+            wMesh.rotation.y = wAngle;
+            wMesh.position.copy(wPos);
+            scene.add(wMesh);
+            projectiles.push({
+              mesh:wMesh, dir:wDir.clone(), speed:12, damage:waveDmg,
+              owner:'player', life:0.55, radius:0.30,
+              trailColor:0xFFD700, trailTimer:0, remainingHits:1,
+              hitEnemies:new Set(), _lockY:1.0
+            });
           }
         } else {
-          // Narrow long wave: 3 tight segments, longer range, higher damage
+          // Narrow long wave: elongated sword-beam shape
           const waveSegs = 3;
           const wAngleSpan = sHalfAng * 2;
           const waveDmg = sDmg * 0.65;
@@ -8971,7 +8984,20 @@ function firePlayerSpell(){
             const wAngle = aimAngle - sHalfAng + (wi/(Math.max(1,waveSegs-1)))*wAngleSpan;
             const wDir = new THREE.Vector3(Math.sin(wAngle),0,Math.cos(wAngle)).normalize();
             const wPos = origin.clone().add(new THREE.Vector3(wDir.x,1.0,wDir.z));
-            createProjectile(wPos, wDir, 'player', {size:0.15,color:0xFFFAA0,speed:18,damage:waveDmg,life:0.95,remainingHits:1});
+            // Narrow elongated wave mesh (sword beam)
+            const wMesh = new THREE.Mesh(
+              new THREE.BoxGeometry(0.13, 0.10, 0.80),
+              new THREE.MeshBasicMaterial({color:0xFFFAA0,transparent:true,opacity:0.92,depthWrite:false})
+            );
+            wMesh.rotation.y = wAngle;
+            wMesh.position.copy(wPos);
+            scene.add(wMesh);
+            projectiles.push({
+              mesh:wMesh, dir:wDir.clone(), speed:18, damage:waveDmg,
+              owner:'player', life:0.95, radius:0.18,
+              trailColor:0xFFFAA0, trailTimer:0, remainingHits:1,
+              hitEnemies:new Set(), _lockY:1.0
+            });
           }
         }
         burst(origin.clone().add(new THREE.Vector3(0,1.0,0)), 0xFFD700, 8, 0.08, 0.4);
@@ -10239,9 +10265,10 @@ function useHeroSkill(dir){
     player.gnomeMechHitCharge = 0; // reset charge
     if(!player.gnomeMechShield) player.gnomeMechShield = 0;
     if(!player.gnomeMechGuns)   player.gnomeMechGuns   = [];
-    const gunsToAdd = Math.min(3, 3 - player.gnomeMechGuns.length);
+    const gunsToAdd = Math.min(1, 3 - player.gnomeMechGuns.length);
     for(let gi=0; gi<gunsToAdd; gi++){
-      const angle = (gi/3)*Math.PI*2 + Math.PI/6;
+      const gunSlot = player.gnomeMechGuns.length + gi;
+      const angle = (gunSlot/3)*Math.PI*2 + Math.PI/6;
       const gunG = new THREE.Group();
       const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,0.7,8), new THREE.MeshBasicMaterial({color:0x333333}));
       barrel.rotation.z = Math.PI/2;
@@ -10275,7 +10302,7 @@ function useHeroSkill(dir){
     // Snowball: starts small, grows as it flies, absorbs enemies inside
     player.activeSkillCooldown = hero.skillCd;
     const aimDir = v.clone().normalize();
-    const snowGeo = new THREE.SphereGeometry(0.2, 12, 12);
+    const snowGeo = new THREE.SphereGeometry(0.3, 12, 12);
     const snowMat = new THREE.MeshBasicMaterial({color:0xEEEEFF,transparent:true,opacity:0.92});
     const snowMesh = new THREE.Mesh(snowGeo, snowMat);
     const startPos = player.mesh.position.clone().add(new THREE.Vector3(aimDir.x*1.5,0.4,aimDir.z*1.5));
@@ -10283,7 +10310,7 @@ function useHeroSkill(dir){
     scene.add(snowMesh);
     const sb = {
       mesh:snowMesh, dir:aimDir.clone(), speed:7.0,
-      damage:player.damage*0.8, radius:0.22, life:5.0, _baseLife:5.0,
+      damage:player.damage*0.8, radius:0.33, life:5.0, _baseLife:5.0,
       absorbed:0, _lockY:0.4,
       owner:'player', trailColor:0xCCEEFF, trailTimer:0, remainingHits:99,
       hitEnemies:new Set(), _snowball:true,
@@ -11803,9 +11830,9 @@ function updateProjectiles(arr,dt,hitEnemy){
     // ── Snowball: grow over time + carry captured enemies ──
     if(p._snowball){
       const elapsed = (p._baseLife||5.0) - p.life;
-      const growR = 0.22 + elapsed * 0.28 + p.absorbed * 0.20;
+      const growR = 0.33 + elapsed * 0.56 + p.absorbed * 0.20;
       p.radius = growR;
-      p.mesh.scale.setScalar(growR / 0.20);
+      p.mesh.scale.setScalar(growR / 0.30);
       // Carry captured enemies
       if(p.capturedEnemies && p.capturedEnemies.length>0){
         for(const ce of p.capturedEnemies){
@@ -12801,9 +12828,12 @@ function updateHUD(){
     }
     const charge = player.gnomeMechHitCharge||0;
     const guns = (player.gnomeMechGuns||[]).length;
-    const pips = '⬡'.repeat(charge) + '⬢'.repeat(Math.max(0,5-charge));
-    gnomeChargeEl.textContent = `⚙ ${pips} | 🔫${guns}/3`;
-    gnomeChargeEl.style.color = charge >= 5 ? '#0f0' : '#4af';
+    const pipColor = charge >= 5 ? '#0f0' : '#4af';
+    const pips = [...Array(5)].map((_,i)=>`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${i<charge?pipColor:'#1a3a5c'};margin:0 1px;vertical-align:middle;box-shadow:${i<charge?'0 0 4px '+pipColor:'none'};"></span>`).join('');
+    const gearSvg = `<svg width="11" height="11" viewBox="0 0 12 12" style="vertical-align:middle;margin-right:2px"><circle cx="6" cy="6" r="2.2" fill="${pipColor}"/><path d="M6 0.5v2M6 9.5v2M0.5 6h2M9.5 6h2M2.2 2.2l1.4 1.4M8.4 8.4l1.4 1.4M2.2 9.8l1.4-1.4M8.4 3.6l1.4-1.4" stroke="${pipColor}" stroke-width="1.3" stroke-linecap="round"/></svg>`;
+    const gunSvg = `<svg width="14" height="10" viewBox="0 0 14 10" style="vertical-align:middle;margin:0 2px"><rect x="0" y="3.5" width="9" height="4" rx="1.2" fill="${pipColor}"/><rect x="9" y="2.5" width="5" height="2.5" rx="0.8" fill="${pipColor}"/><rect x="3" y="7.5" width="2.5" height="2.5" rx="0.6" fill="${pipColor}"/></svg>`;
+    gnomeChargeEl.innerHTML = `${gearSvg}${pips} ${gunSvg}${guns}/3`;
+    gnomeChargeEl.style.color = pipColor;
   } else if(gnomeChargeEl){ gnomeChargeEl.remove(); }
   // ── HP опасная зона: пульсирующее свечение при HP < 30% ──
   const hudHpBlock = document.getElementById('hud-hp-block');
