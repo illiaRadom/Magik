@@ -5081,17 +5081,17 @@ function createHeroNecromancer(){
   skull.position.set(0, -.07, 0);
   aR.handG.add(skull);
 
-  // ---- STAFF (held in RIGHT hand, pointing up-forward) ----
+  // ---- STAFF (held in RIGHT hand — skull at TOP, grip at hand) ----
   const staffG = new THREE.Group();
-  // Staff shaft — handle at bottom (y=0), top goes up
-  staffG.add(_at(_C(.03, .03, 1.20, 6, mStaff),      0, -.60, 0)); // shaft (centered at -.60 so base is at 0)
-  staffG.add(_at(_C(.05, .05, .055, 6, mBone),        0, -.30, 0)); // ring hi
-  staffG.add(_at(_C(.05, .05, .055, 6, mBone),        0, -.90, 0)); // ring lo
-  staffG.add(_at(_S(.13, 5, 4, mBone),                0, -1.10, 0)); // skull top (at bottom of shaft)
-  staffG.add(_at(_S(.17, 6, 5, mGlow),                0, -1.10, 0)); // glow orb
-  // Hold grip at top, tip/skull at bottom — rotate so shaft goes upward
-  staffG.rotation.set(-.30, .14, .08); // slight tilt forward and to side
-  staffG.position.set(0, -.06, .06); // at hand position
+  // Shaft goes UPWARD from hand: center at +.60, top at +1.20
+  staffG.add(_at(_C(.03, .03, 1.20, 6, mStaff),      0, .60, 0)); // shaft goes up
+  staffG.add(_at(_C(.05, .05, .055, 6, mBone),        0, .30, 0)); // ring lo
+  staffG.add(_at(_C(.05, .05, .055, 6, mBone),        0, .90, 0)); // ring hi
+  staffG.add(_at(_S(.13, 5, 4, mBone),                0, 1.12, 0)); // skull at TOP
+  staffG.add(_at(_S(.17, 6, 5, mGlow),                0, 1.12, 0)); // glow orb at top
+  // Slight forward tilt — skull leans toward camera
+  staffG.rotation.set(-.20, .10, .06);
+  staffG.position.set(0, .02, .08); // handle at hand, staff extends up in front
   aR.handG.add(staffG);
 
   // ---- CAPE (back of torso) ----
@@ -16043,7 +16043,7 @@ try {
         // RIGHT ARM — raised up, hand gripping sword on shoulder
         const aR = _buildArmV3(mDGray, mBlack, mDGray, mBlack, mDark, mSilver, .36,.30, true, true);
         aR.shoulderG.position.set(.62,.70,0);
-        aR.shoulderG.rotation.set(-1.20, -.14, .18);  // arm raised up high
+        aR.shoulderG.rotation.set(-.65, -.10, .14);  // arm forward — sword in front
         torsoG.add(aR.shoulderG);
         for(let f=0;f<4;f++) aR.handG.add(_at(_B(.04,.10,.04,mDark), -.045+f*.030,-.12,.04));
 
@@ -16065,10 +16065,11 @@ try {
         // Pommel at bottom
         sword.add(_at(_B(.12,.12,.12,mSilver),    0,-.42,0));
         sword.add(_at(_K(.06,.14,4,mSilver),      0,-.50,0, Math.PI,0,0));
-        // Arm raised high, sword handle in hand, blade rests on shoulder
-        sword.rotation.z = .60; // tilt so blade goes over shoulder
-        sword.rotation.y = -.08;
-        sword.position.set(0, -.10, .04);
+        // Sword held in front — tip up, handle in hand
+        sword.rotation.z = 0;
+        sword.rotation.y = 0;
+        sword.rotation.x = 0;
+        sword.position.set(0, -.10, .10); // in front of character
         aR.handG.add(sword);
 
         // Cape — very long, floor-length and beyond, billows dramatically
@@ -16209,7 +16210,7 @@ try {
         // LEFT ARM — raised up holding staff
         const aL = _buildArmV3(mRobe, mRobe, _m(0x374151,.60), mRobe, mSkin, mGold, .28,.24, false, false);
         aL.shoulderG.position.set(-.48,.62,0);
-        aL.shoulderG.rotation.set(-1.10, .08, -.12);  // arm raised high with staff
+        aL.shoulderG.rotation.set(-.55, .08, -.08);  // arm forward — staff held in front
         torsoG.add(aL.shoulderG);
 
         // MAGICAL STAFF in left hand
