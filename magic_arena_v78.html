@@ -1717,19 +1717,20 @@ window.createGnomeMech = function () {
   const mPiston= _m(0xC0C0C0, .22, .80);
 
   // ─── TRACKS firmly on ground (bottom at Y=0) ────────────────
-  // Track centre at Y = .35 (half of track height .70)
+  // Track centre at Y = .35 (half of track height .70), lifted by +0.20
+  const trackLift = 0.20; // raise tracks and whole mech up
   for (let sx = -1; sx <= 1; sx += 2) {
-    root.add(_at(_B(.28, .70, 1.40, mTrack), sx*.76, .35, 0));
+    root.add(_at(_B(.28, .70, 1.40, mTrack), sx*.76, .35+trackLift, 0));
     for (let i = 0; i < 6; i++)
-      root.add(_at(_C(.18, .18, .28, 4, mSteel), sx*.76, .32, -.50+i*.24, 0,0,Math.PI/2));
+      root.add(_at(_C(.18, .18, .28, 4, mSteel), sx*.76, .32+trackLift, -.50+i*.24, 0,0,Math.PI/2));
     for (let i = 0; i < 11; i++)
-      root.add(_at(_B(.07, .08, .28, mTrack), sx*.68, .05+i*.06, -.50+i*.11));
+      root.add(_at(_B(.07, .08, .28, mTrack), sx*.68, .05+trackLift+i*.06, -.50+i*.11));
   }
-  root.add(_at(_B(1.70, .10, 1.44, mWoodD), 0, .10, 0)); // base plate
+  root.add(_at(_B(1.70, .10, 1.44, mWoodD), 0, .10+trackLift, 0)); // base plate
 
-  // ─── MAIN HULL (bottom at Y=.70) ────────────────────────────
+  // ─── MAIN HULL (bottom at Y=.70+trackLift) ────────────────────────────
   const mechG = new THREE.Group();
-  mechG.position.set(0, .70, 0);
+  mechG.position.set(0, .70+trackLift, 0);
   root.add(mechG);
   mechG.add(_at(_B(1.14, .74, .92, mWood),  0, .37, 0));
   mechG.add(_at(_B(1.00, .68, .88, mWoodD), 0, .35, .04));
@@ -2043,19 +2044,20 @@ window.createYeti = function () {
   headG.add(_at(_B(.26,.07,.05,mFur), -.15,.24,.24));
   headG.add(_at(_B(.26,.07,.05,mFur),  .15,.24,.24));
 
-  // BIG OPEN MOUTH with teeth
-  headG.add(_at(_B(.52,.18,.09,_m(0x220000,.90)), 0,-.18,.26)); // jaw dark
-  headG.add(_at(_B(.46,.09,.07,_m(0xFF4488,.70)), 0,-.13,.28)); // gum top
-  headG.add(_at(_B(.46,.09,.07,_m(0xFF4488,.70)), 0,-.22,.28)); // gum bottom
-  // Upper teeth (5)
+  // BIG OPEN MOUTH with proper teeth — wide jaw, clearly open
+  headG.add(_at(_B(.58,.26,.10,_m(0x1A0000,.92)), 0,-.18,.24)); // WIDER jaw opening dark
+  headG.add(_at(_B(.54,.06,.08,_m(0x880022,.80)), 0,-.06,.27)); // upper gum line
+  headG.add(_at(_B(.54,.06,.08,_m(0x880022,.80)), 0,-.28,.27)); // lower gum line
+  headG.add(_at(_B(.50,.12,.08,_m(0xFF5599,.65)), 0,-.17,.28)); // tongue / inner mouth
+  // Upper teeth row (6) — pointing DOWN
+  for (let i = 0; i < 6; i++)
+    headG.add(_at(_K(.048,.16,4,mTooth), -.20+i*.08,-.08,.30, Math.PI,0,0));
+  // Lower teeth row (5) — pointing UP
   for (let i = 0; i < 5; i++)
-    headG.add(_at(_K(.044,.14,4,mTooth), -.16+i*.08,-.11,.30, Math.PI,0,0));
-  // Lower teeth (4)
-  for (let i = 0; i < 4; i++)
-    headG.add(_at(_K(.038,.11,4,mTooth), -.12+i*.08,-.22,.30, 0,0,0));
-  // Big fangs on sides
-  headG.add(_at(_K(.068,.22,4,mTooth), -.22,-.14,.26, Math.PI*.80,0,-.18));
-  headG.add(_at(_K(.068,.22,4,mTooth),  .22,-.14,.26, Math.PI*.80,0, .18));
+    headG.add(_at(_K(.040,.12,4,mTooth), -.16+i*.08,-.26,.30, 0,0,0));
+  // Big prominent FANGS on sides — very visible
+  headG.add(_at(_K(.080,.28,4,mTooth), -.26,-.10,.26, Math.PI*.82,0,-.22));
+  headG.add(_at(_K(.080,.28,4,mTooth),  .26,-.10,.26, Math.PI*.82,0, .22));
 
   // MASSIVE fur spikes on top — 3 rows
   for (let i = 0; i < 8; i++)
@@ -2194,7 +2196,7 @@ window.createSamurai = function () {
   headG.add(_at(_O(.042,mEyeD),  .08,.18,.22));
 
   // BIG DETAILED MENPO (red face mask — lower half, LARGE)
-  headG.add(_at(_B(.52,.32,.10,mBlack),   0,-.02,.20)); // base wider
+  headG.add(_at(_B(.52,.32,.10,mRed),   0,-.02,.20)); // base wider — red not black
   headG.add(_at(_B(.48,.28,.08,mRed),     0,-.02,.24)); // red face
   headG.add(_at(_B(.44,.18,.07,_m(0xCC0000,.60,.12)), 0,-.02,.27)); // darker centre
   // Nose bridge — visible 3D nose
@@ -2226,46 +2228,46 @@ window.createSamurai = function () {
     headG.add(_at(_O(.018,mGold), -.16+i*.08, -.02,.29));
 
   // BIG KABUTO (samurai helmet — iconic shape, LARGER and MORE DETAILED)
-  // Main dome — wider and taller
-  headG.add(_at(_B(.56,.22,.54,mLac),    0,.28,0)); // lower dome wider
-  headG.add(_at(_B(.52,.20,.50,mLac),    0,.44,0)); // mid dome
-  headG.add(_at(_B(.46,.16,.44,mLac),    0,.58,0)); // upper dome
-  headG.add(_at(_B(.40,.12,.38,mLac),    0,.70,0)); // top
-  headG.add(_at(_B(.32,.08,.30,mLac),    0,.80,0)); // tip dome
+  // Main dome — wider and taller (moved DOWN by 0.07)
+  headG.add(_at(_B(.56,.22,.54,mLac),    0,.21,0)); // lower dome wider
+  headG.add(_at(_B(.52,.20,.50,mLac),    0,.37,0)); // mid dome
+  headG.add(_at(_B(.46,.16,.44,mLac),    0,.51,0)); // upper dome
+  headG.add(_at(_B(.40,.12,.38,mLac),    0,.63,0)); // top
+  headG.add(_at(_B(.32,.08,.30,mLac),    0,.73,0)); // tip dome
   // Gold ring trim
-  headG.add(_at(_B(.58,.05,.56,mGoldE),  0,.26,0)); // bottom trim ring
-  headG.add(_at(_B(.54,.04,.52,mGoldE),  0,.44,0)); // mid ring
+  headG.add(_at(_B(.58,.05,.56,mGoldE),  0,.19,0)); // bottom trim ring
+  headG.add(_at(_B(.54,.04,.52,mGoldE),  0,.37,0)); // mid ring
   // Wide front brim (mabisashi)
-  headG.add(_at(_B(.62,.09,.56,mLac),    0,.20,0));
-  headG.add(_at(_B(.66,.05,.12,mLac),    0,.17,.30)); // front visor extension
+  headG.add(_at(_B(.62,.09,.56,mLac),    0,.13,0));
+  headG.add(_at(_B(.66,.05,.12,mLac),    0,.10,.30)); // front visor extension
   // Front spine stripe (gold)
-  headG.add(_at(_B(.06,.60,.08,mGoldE),  0,.46,.28)); // front gold stripe
-  headG.add(_at(_B(.06,.60,.08,mGoldE),  0,.46,-.28)); // back spine
+  headG.add(_at(_B(.06,.60,.08,mGoldE),  0,.39,.28)); // front gold stripe
+  headG.add(_at(_B(.06,.60,.08,mGoldE),  0,.39,-.28)); // back spine
   // Kuwagata (horns) — dramatic
-  headG.add(_at(_B(.06,.50,.06,mGoldE), -.14,.74,0)); // left horn
-  headG.add(_at(_B(.06,.50,.06,mGoldE),  .14,.74,0)); // right horn
-  headG.add(_at(_K(.044,.14,4,mGoldE),  -.14,1.00,0)); // left tip
-  headG.add(_at(_K(.044,.14,4,mGoldE),   .14,1.00,0)); // right tip
-  headG.add(_at(_B(.28,.05,.05,mGoldE),  0,.92,0));    // cross bar
+  headG.add(_at(_B(.06,.50,.06,mGoldE), -.14,.67,0)); // left horn
+  headG.add(_at(_B(.06,.50,.06,mGoldE),  .14,.67,0)); // right horn
+  headG.add(_at(_K(.044,.14,4,mGoldE),  -.14,.93,0)); // left tip
+  headG.add(_at(_K(.044,.14,4,mGoldE),   .14,.93,0)); // right tip
+  headG.add(_at(_B(.28,.05,.05,mGoldE),  0,.85,0));    // cross bar
   // Fukikaeshi (swept-back side plates)
-  headG.add(_at(_B(.09,.28,.36,mRed),   -.30,.38,-.04, 0,0, .22));
-  headG.add(_at(_B(.09,.28,.36,mRed),    .30,.38,-.04, 0,0,-.22));
+  headG.add(_at(_B(.09,.28,.36,mRed),   -.30,.31,-.04, 0,0, .22));
+  headG.add(_at(_B(.09,.28,.36,mRed),    .30,.31,-.04, 0,0,-.22));
   for (let j = 0; j < 4; j++) {
-    headG.add(_at(_B(.07,.07,.34,mGold), -.30,.22+j*.08,-.04));
-    headG.add(_at(_B(.07,.07,.34,mGold),  .30,.22+j*.08,-.04));
+    headG.add(_at(_B(.07,.07,.34,mGold), -.30,.15+j*.08,-.04));
+    headG.add(_at(_B(.07,.07,.34,mGold),  .30,.15+j*.08,-.04));
   }
   // Rivets on dome
   for (let i = 0; i < 6; i++)
-    headG.add(_at(_O(.022,mGold), -.22+i*.088,.28,.30));
+    headG.add(_at(_O(.022,mGold), -.22+i*.088,.21,.30));
   // TALL FRONT CREST (maedate) — dramatic standing blade shape
-  headG.add(_at(_B(.09,.56,.07,mGoldE),  0,.72,0));    // vertical blade
-  headG.add(_at(_B(.20,.09,.07,mGoldE),  0,.80,0));    // crosspiece
-  headG.add(_at(_K(.050,.20,4,mGoldE),   0,.96,.04, -.28,0,0)); // tip
+  headG.add(_at(_B(.09,.56,.07,mGoldE),  0,.65,0));    // vertical blade
+  headG.add(_at(_B(.20,.09,.07,mGoldE),  0,.73,0));    // crosspiece
+  headG.add(_at(_K(.050,.20,4,mGoldE),   0,.89,.04, -.28,0,0)); // tip
   // Kasa-jirushi (top decoration)
-  headG.add(_at(_C(.048,.048,.09,4,mGold), 0,.82,0));
+  headG.add(_at(_C(.048,.048,.09,4,mGold), 0,.75,0));
   // Shikoro (6 neck plates, angled wider)
   for (let j = 0; j < 6; j++)
-    headG.add(_at(_B(.54,.07,.36,mBlack), 0,-.10-j*.07, j*.022));
+    headG.add(_at(_B(.54,.07,.36,mBlack), 0,-.17-j*.07, j*.022));
 
   const aL = _buildArmV3(mBlack,mBlack,mGold,mBlack,mSkin,mGold, .30,.26, false,true);
   aL.shoulderG.position.set(-.46,.62,0);
@@ -2479,51 +2481,64 @@ window.createMiner = function () {
   // BIG SQUARE HEAD — much bigger, clearly square
   const headG = new THREE.Group();
   headG.position.set(0,.26,0); neckG.add(headG);
-  headG.add(_at(_B(.48,.42,.44,mSkin),   0,.10,0));  // smaller square head
-  headG.add(_at(_B(.44,.07,.48,mHat),    0,.10,0));  // hat extension
-  // VERY wide big hard hat
-  headG.add(_at(_B(.72,.28,.62,mHat),    0,.32,0));
-  headG.add(_at(_B(.80,.07,.70,mHat),    0,.20,0)); // very wide brim
-  headG.add(_at(_B(.76,.06,.68,_m(0xFFAA00,.50,.40)), 0,.20,0)); // brim accent
-  // Bigger bright lamp
-  headG.add(_at(_B(.13,.16,.13,mMetal),  0,.30,.34));
-  headG.add(_at(_O(.082,mLamp),           0,.30,.42));
-  headG.add(_at(_O(.050,_m(0xFFFFAA,.04,.0,0xFFFF66,12.0)), 0,.30,.44)); // extra glow
-  // Face features on square head
-  headG.add(_at(_B(.18,.16,.06,_m(0xFFFFFF,.70)), -.11,.10,.28)); // L white
-  headG.add(_at(_B(.18,.16,.06,_m(0xFFFFFF,.70)),  .11,.10,.28)); // R white
-  headG.add(_at(_O(.080,_m(0x334422,.80)), -.11,.10,.30)); // L eye BIG
-  headG.add(_at(_O(.080,_m(0x334422,.80)),  .11,.10,.30)); // R eye BIG
-  headG.add(_at(_O(.040,_m(0x000000,.90)), -.11,.10,.32)); // L pupil
-  headG.add(_at(_O(.040,_m(0x000000,.90)),  .11,.10,.32)); // R pupil
-  headG.add(_at(_K(.036,.10,4,mSkin), 0,.06,.32, Math.PI/2,0,0)); // nose
+  headG.add(_at(_B(.48,.42,.44,mSkin),   0,.10,0));  // square head
+  // Smaller hard hat — reduced from .72 to .60 wide
+  headG.add(_at(_B(.60,.20,.52,mHat),    0,.34,0)); // smaller helmet dome
+  headG.add(_at(_B(.66,.06,.58,mHat),    0,.24,0)); // narrower brim
+  headG.add(_at(_B(.62,.05,.54,_m(0xFFAA00,.50,.40)), 0,.24,0)); // brim accent
+  // Lamp — moved to front forehead of helmet
+  headG.add(_at(_B(.12,.14,.10,mMetal),  0,.36,.30)); // lamp mount on hat front
+  headG.add(_at(_O(.076,mLamp),           0,.36,.38));
+  headG.add(_at(_O(.048,_m(0xFFFFAA,.04,.0,0xFFFF66,12.0)), 0,.36,.40)); // extra glow
+  // Face features — clear positions on the face (not under hat)
+  // Eyes at Y=.08 (middle of face), hat starts at Y=.24
+  headG.add(_at(_B(.18,.16,.06,_m(0xFFFFFF,.70)), -.11,.08,.24)); // L white
+  headG.add(_at(_B(.18,.16,.06,_m(0xFFFFFF,.70)),  .11,.08,.24)); // R white
+  headG.add(_at(_O(.078,_m(0x334422,.80)), -.11,.08,.26)); // L eye BIG
+  headG.add(_at(_O(.078,_m(0x334422,.80)),  .11,.08,.26)); // R eye BIG
+  headG.add(_at(_O(.038,_m(0x000000,.90)), -.11,.08,.28)); // L pupil
+  headG.add(_at(_O(.038,_m(0x000000,.90)),  .11,.08,.28)); // R pupil
+  // Glasses frames around eyes
+  headG.add(_at(_C(.070,.070,.014,5,_m(0x333333,.60,.40)), -.11,.08,.25, 0,0,Math.PI/2)); // L frame
+  headG.add(_at(_C(.070,.070,.014,5,_m(0x333333,.60,.40)),  .11,.08,.25, 0,0,Math.PI/2)); // R frame
+  headG.add(_at(_B(.10,.016,.014,_m(0x333333,.60,.40)), 0,.08,.25)); // bridge
+  headG.add(_at(_K(.036,.10,4,mSkin), 0,.04,.28, Math.PI/2,0,0)); // nose
+  // Smile
+  headG.add(_at(_B(.22,.030,.016,_m(0x7A3A10,.80,.0)), 0,-.06,.26, 0,0,.16)); // mouth curve
 
-  // BIG PICKAXE — much bigger metal head
+  // BIG PICKAXE — HUGE metal head
   const pickG = new THREE.Group();
   pickG.add(_at(_C(.060,.060,1.10,4,mWood), 0, 0, 0)); // thicker handle
-  pickG.add(_at(_K(.160,.70,4,mMetal), 0,.60,0, 0,0, Math.PI/2));  // BIGGER spike 1
-  pickG.add(_at(_K(.160,.56,4,mMetal), 0,.60,0, 0,0,-Math.PI/2+.26)); // spike 2 bigger
-  pickG.add(_at(_B(.34,.20,.22,mMetal), 0,.60,0)); // bigger collar
-  pickG.add(_at(_B(.06,.56,.08,_m(0xC8C8C8,.22,.80)), 0,.72,.04)); // shine line on pick
+  pickG.add(_at(_K(.220,.90,4,mMetal), 0,.60,0, 0,0, Math.PI/2));  // HUGE spike 1
+  pickG.add(_at(_K(.200,.72,4,mMetal), 0,.60,0, 0,0,-Math.PI/2+.26)); // spike 2 huge
+  pickG.add(_at(_B(.44,.26,.28,mMetal), 0,.60,0)); // large collar/head block
+  pickG.add(_at(_B(.06,.70,.08,_m(0xC8C8C8,.22,.80)), 0,.76,.04)); // shine line on pick
   pickG.rotation.set(Math.PI/2, 0, 0);
   pickG.position.set(0,-.12,.18);
   aR.handG.add(pickG);
 
-  // DETAILED BACKPACK with MANY rocks
+  // DETAILED BACKPACK — voluminous, with rocks on/in pack (NOT at head level)
   const packG = new THREE.Group();
-  packG.position.set(0,.44,-.36); torsoG.add(packG);
-  packG.add(_at(_B(.58,.66,.28,mBrown),  0,  0, 0));
-  packG.add(_at(_B(.62,.068,.32,mBrown), 0, .34, 0)); // open top rim
-  packG.add(_at(_B(.54,.062,.28,_m(0x3A1A0A,.90)), 0,.30,0)); // dark interior
-  // 10 rocks sticking far above rim
-  [[-.20,.36,.14],[.08,.42,.14],[.22,.38,.12],[-.06,.48,.14],
-   [.18,.52,.12],[-.22,.44,.10],[.02,.56,.12],[.24,.46,.10],
-   [-.12,.32,.14],[.14,.34,.14]
+  packG.position.set(0,.40,-.40); torsoG.add(packG);
+  packG.add(_at(_B(.68,.80,.36,mBrown),  0,  0, 0));  // larger main body
+  packG.add(_at(_B(.72,.086,.40,mBrown), 0, .41, 0)); // open top rim wider
+  packG.add(_at(_B(.62,.080,.34,_m(0x3A1A0A,.90)), 0,.36,0)); // dark interior
+  // Side pocket flaps
+  packG.add(_at(_B(.16,.36,.10,mBrown), -.34,.06,.04));
+  packG.add(_at(_B(.16,.36,.10,mBrown),  .34,.06,.04));
+  // Straps
+  packG.add(_at(_B(.08,.64,.08,mBrown), -.22,.10,.20));
+  packG.add(_at(_B(.08,.64,.08,mBrown),  .22,.10,.20));
+  // Rocks sticking OUT of top of backpack (at pack level, not head level)
+  [[-.20,.42,.16],[.10,.48,.16],[.24,.44,.14],[-.06,.52,.16],
+   [.20,.56,.14],[-.24,.48,.12],[.04,.60,.14],[.26,.50,.12],
+   [-.14,.38,.16],[.16,.40,.16]
   ].forEach(([rx,ry,rz],i) => {
-    packG.add(_at(_O(.074+i*.006, i%4===0?mRockL:mRock), rx,ry,rz));
+    packG.add(_at(_O(.080+i*.006, i%4===0?mRockL:mRock), rx,ry,rz));
   });
-  packG.add(_at(_B(.072,.58,.072,mBrown), -.22,.12,.16));
-  packG.add(_at(_B(.072,.58,.072,mBrown),  .22,.12,.16));
+  // Belt straps at bottom of pack
+  packG.add(_at(_B(.072,.60,.072,mBrown), -.26,.08,.20));
+  packG.add(_at(_B(.072,.60,.072,mBrown),  .26,.08,.20));
 
   root.userData.refs = {
     torso:torsoG, head:headG,
@@ -2622,27 +2637,53 @@ window.createLeprechaun = function () {
   headG.add(_at(_B(.22,.05,.05,mRed),  .24,-.12,.22, 0,0, .3));
 
   // BIG DETAILED STOVEPIPE HAT
-  headG.add(_at(_B(.52,.064,.54,mGreen),  0,.26,0)); // brim — wide box
-  headG.add(_at(_B(.50,.060,.52,_m(0x004400,.70,.0)), 0,.26,0)); // brim shadow
-  headG.add(_at(_B(.58,.064,.56,mGold),   0,.22,0)); // gold band
-  headG.add(_at(_B(.40,.56,.42,mGreen),   0,.56,0)); // tall crown box
-  headG.add(_at(_B(.38,.54,.40,_m(0x004400,.70,.0)), 0,.56,.02)); // crown shading
-  headG.add(_at(_B(.40,.064,.42,_m(0x003300,.80,.0)), 0,.86,0)); // top cap
-  // Gold detail on hat
-  headG.add(_at(_B(.42,.048,.44,mGold),   0,.28,0)); // lower gold band
-  // Shamrock on hat
+  // Wide brim — two layers for depth
+  headG.add(_at(_B(.60,.070,.62,mGreen),  0,.26,0)); // main brim wide
+  headG.add(_at(_B(.58,.065,.60,_m(0x004400,.70,.0)), 0,.26,0)); // brim top shadow
+  headG.add(_at(_B(.62,.040,.64,_m(0x003300,.80,.0)), 0,.22,0)); // brim underside
+  // Gold buckle band on brim
+  headG.add(_at(_B(.42,.058,.44,mGold),   0,.30,0)); // gold band at brim base
+  // Gold buckle detail — front rectangular buckle
+  headG.add(_at(_B(.14,.08,.050,mGold),   0,.31,.23)); // buckle frame
+  headG.add(_at(_B(.08,.05,.052,_m(0x222200,.90,.0)), 0,.31,.24)); // buckle hole
+  headG.add(_at(_B(.016,.08,.050,mGold),  0,.31,.23)); // buckle center pin
+  // Tall crown box with shading
+  headG.add(_at(_B(.40,.58,.42,mGreen),   0,.58,0)); // tall crown box
+  headG.add(_at(_B(.38,.56,.40,_m(0x004400,.70,.0)), 0,.58,.02)); // crown front shading
+  headG.add(_at(_B(.38,.56,.10,_m(0x003300,.80,.0)), 0,.58,-.22)); // crown back shading
+  // Top cap with trim
+  headG.add(_at(_B(.42,.068,.44,_m(0x003300,.80,.0)), 0,.88,0)); // top cap
+  headG.add(_at(_B(.40,.040,.42,mGold),   0,.86,0)); // top gold trim
+  // Hat band accent stripes
+  headG.add(_at(_B(.042,.58,.044,_m(0x002200,.88,.0)), -.20,.58,-.22)); // left edge
+  headG.add(_at(_B(.042,.58,.044,_m(0x002200,.88,.0)),  .20,.58,-.22)); // right edge
+  // Shamrock on hat front
   for (let i = 0; i < 3; i++) {
     const a = i/3*Math.PI*2;
-    headG.add(_at(_O(.046,mGold), Math.cos(a)*.082,.70+Math.abs(Math.sin(a))*.028,Math.sin(a)*.06+.22));
+    headG.add(_at(_O(.050,mGold), Math.cos(a)*.082,.70+Math.abs(Math.sin(a))*.030,Math.sin(a)*.06+.22));
   }
   headG.add(_at(_C(.016,.016,.076,4,mGold), 0,.60,.22));
 
-  // COIN BAG on back
+  // GOLD SACK / COIN BAG on back — prominent sack of coins
   const bagG = new THREE.Group();
-  bagG.position.set(0,.30,-.26); torsoG.add(bagG);
-  bagG.add(_at(_O(.20,mBrown), 0,0,0));  // bigger bag
-  for (let i = 0; i < 5; i++)
-    bagG.add(_at(_C(.050,.050,.028,5,mCoin), (i%3-1)*.10,.06+(i>2?.08:0),.16));
+  bagG.position.set(0,.30,-.28); torsoG.add(bagG);
+  // Main bulging sack body — rounded brown sack
+  bagG.add(_at(_O(.22,mBrown), 0,.04,0));  // large round sack
+  bagG.add(_at(_O(.18,mBrown), 0,.20,0));  // upper bulge
+  bagG.add(_at(_B(.32,.28,.28,mBrown), 0,.04,0)); // core box to fill out shape
+  // Tied top of sack
+  bagG.add(_at(_C(.10,.06,.08,5,mBrown), 0,.30,0)); // neck of sack
+  bagG.add(_at(_B(.18,.04,.08,mGold), 0,.34,0)); // gold tie string
+  // Gold coins visible at opening
+  for (let i = 0; i < 6; i++) {
+    const a = i/6*Math.PI*2;
+    bagG.add(_at(_C(.040,.040,.022,5,mCoin),
+      Math.cos(a)*.072, .28+Math.abs(Math.sin(i*.7))*.04, Math.sin(a)*.060));
+  }
+  // Coins spilling slightly
+  bagG.add(_at(_C(.048,.048,.024,5,mCoin), -.08,.32,.06));
+  bagG.add(_at(_C(.048,.048,.024,5,mCoin),  .06,.34,.04));
+  bagG.add(_at(_C(.048,.048,.024,5,mCoin),  .02,.30,.08));
 
   root.userData.refs = {
     torso:torsoG, head:headG,
@@ -2861,11 +2902,11 @@ window.createIceLizard = function () {
 
   // SHORT neck so head sits low on shoulders
   const neckG = _buildNeckV3(mScale,mArmor,.14);
-  neckG.position.set(0,.68,0); torsoG.add(neckG);
+  neckG.position.set(0,.56,0); torsoG.add(neckG);  // moved down from .68
 
   // BIG SQUARE HEAD — lower position
   const headG = new THREE.Group();
-  headG.position.set(0,.14,0); neckG.add(headG); // low offset
+  headG.position.set(0,.08,0); neckG.add(headG); // low offset, moved down from .14
   headG.add(_at(_B(.48,.40,.54,mScale),   0,.20,0));  // big square skull
   headG.add(_at(_B(.44,.24,.40,mBelly),   0,.10,.30)); // snout wide
   headG.add(_at(_B(.38,.18,.28,mScale),   0,.26,.40)); // brow ridge
@@ -2878,6 +2919,9 @@ window.createIceLizard = function () {
   // Vertical slit pupils (dragon-like) — WIDER
   headG.add(_at(_B(.050,.22,.06,_m(0x000000,.95)), -.17,.24,.33));
   headG.add(_at(_B(.050,.22,.06,_m(0x000000,.95)),  .17,.24,.33));
+  // Black pupil spheres on top of eyes
+  headG.add(_at(_O(.060,_m(0x050505,.98)), -.17,.24,.34));
+  headG.add(_at(_O(.060,_m(0x050505,.98)),  .17,.24,.34));
   // Dramatic brow horns over eyes
   headG.add(_at(_K(.052,.24,4,_m(0x1A5570,.48,.30)), -.17,.40,.24, 0,0,-.36));
   headG.add(_at(_K(.052,.24,4,_m(0x1A5570,.48,.30)),  .17,.40,.24, 0,0, .36));
@@ -2934,35 +2978,39 @@ window.createSpiderQueen = function () {
   const mChitin= _m(0x3A0044, .32, .44);
 
   // ─── THICK SPIDER LEGS — she STANDS on these, pointing DOWN ───
-  // 4 thick legs, wider stance, body raised high
+  // 4 thick legs, wider stance, body raised high — legs originate from body sides at height
   const spiderStandAngles = [-.16, .28];
   for (let sx = -1; sx <= 1; sx += 2) {
     spiderStandAngles.forEach((fwd, i) => {
       const sleg = new THREE.Group();
-      sleg.position.set(sx*.46, .44, i===0?.24:-.22);
-      sleg.rotation.set(fwd*.3, 0, sx*(Math.PI*.40+i*.06));
+      // Legs start from the pelvis/lower body area at Y=0.68
+      sleg.position.set(sx*.46, .68, i===0?.24:-.22);
+      // Spread outward and downward to act as stilts
+      sleg.rotation.set(fwd*.2, 0, sx*(Math.PI*.28+i*.04));
       root.add(sleg);
-      // Segment 1 — THICK, goes outward
+      // Segment 1 — THICK, goes outward then down
       const s1 = new THREE.Group(); sleg.add(s1);
-      s1.add(_at(_B(.16,.56,.16,mDark), 0,-.28,0));
+      s1.add(_at(_B(.16,.60,.16,mDark), 0,-.30,0));
       s1.add(_at(_B(.12,.10,.12,mChitin), 0,0,0)); // joint cap
-      // Segment 2 — bends DOWN to ground
-      const s2 = new THREE.Group(); s2.position.set(0,-.56,0); s1.add(s2);
-      s2.rotation.x = 1.40; // sharper downward bend
-      s2.add(_at(_B(.13,.54,.13,mNavy), 0,-.27,0));
+      // Segment 2 — bends sharply DOWN to ground
+      const s2 = new THREE.Group(); s2.position.set(0,-.60,0); s1.add(s2);
+      s2.rotation.x = 1.80; // sharper downward bend toward ground
+      s2.add(_at(_B(.13,.58,.13,mNavy), 0,-.29,0));
       s2.add(_at(_B(.10,.10,.10,mChitin), 0,0,0)); // knee joint
-      // Segment 3 — foot, vertical to ground
-      const s3 = new THREE.Group(); s3.position.set(0,-.54,0); s2.add(s3);
-      s3.rotation.x = -.80;
-      s3.add(_at(_B(.10,.42,.10,mDark), 0,-.21,0));
+      // Segment 3 — foot, angling to reach ground
+      const s3 = new THREE.Group(); s3.position.set(0,-.58,0); s2.add(s3);
+      s3.rotation.x = -.90;
+      s3.add(_at(_B(.10,.44,.10,mDark), 0,-.22,0));
       // Claw tip — touches ground
-      s3.add(_at(_K(.060,.20,4,mFang), 0,-.46,0, 0,0,.24*sx));
+      s3.add(_at(_K(.060,.20,4,mFang), 0,-.50,0, 0,0,.24*sx));
     });
   }
+  // Raise entire root so legs reach ground properly
+  root.position.y = 0;
 
   // ─── ABDOMEN (large, hangs behind) ───────────────────────────
   const abdG = new THREE.Group();
-  abdG.position.set(0,.50,-.80);
+  abdG.position.set(0,.74,-.80);
   abdG.rotation.x = .26;
   root.add(abdG);
   abdG.add(_at(_B(.64,.60,.82,mPurp),   0,.08,0));
@@ -2974,14 +3022,14 @@ window.createSpiderQueen = function () {
     abdG.add(_at(_K(.052,.18,4,mDark), sx*.16,-.30,-.46, Math.PI,0,0));
 
   // ─── LOWER BODY / PELVIS ─────────────────────────────────────
-  const pelvisG = new THREE.Group(); pelvisG.position.set(0,.36,0); root.add(pelvisG);
+  const pelvisG = new THREE.Group(); pelvisG.position.set(0,.60,0); root.add(pelvisG);
   pelvisG.add(_at(_B(.70,.32,.58,mPurp),   0,.16,0));
   pelvisG.add(_at(_B(.64,.26,.52,mChitin), 0,.16,.06));
   // Narrow waist (spider waist constriction)
   pelvisG.add(_at(_B(.46,.14,.42,mPurpD),  0,.34,0));
 
   // ─── TORSO — FEMININE upper body ─────────────────────────────
-  const torsoG = new THREE.Group(); torsoG.position.set(0,.58,0); root.add(torsoG);
+  const torsoG = new THREE.Group(); torsoG.position.set(0,.84,0); root.add(torsoG);
   // Wider at chest, narrow at waist
   torsoG.add(_at(_B(.72,.70,.54,mPurp),   0,.35,0));
   // Curved chest — two forward bumps (feminine)
@@ -3138,10 +3186,10 @@ window.createMinotaur = function () {
   torsoG.add(_at(_B(.08,.70,.08,mFurL),  .20,.37,-.34, 0,0,-.18));
 
   const aL = _buildArmV3(mArmor,mFurL,mArD,mFurL,mSkin,mArmor, .40,.36, true,false);
-  aL.shoulderG.position.set(-.70,.68,0);
+  aL.shoulderG.position.set(-.56,.68,0);
   aL.shoulderG.rotation.set(.36,.10,.14); torsoG.add(aL.shoulderG);
   const aR = _buildArmV3(mArmor,mFurL,mArD,mFurL,mSkin,mArmor, .40,.36, true,false);
-  aR.shoulderG.position.set( .70,.68,0);
+  aR.shoulderG.position.set( .56,.68,0);
   aR.shoulderG.rotation.set(-.48,-.10,-.14); torsoG.add(aR.shoulderG);
 
   const neckG = _buildNeckV3(mFurL,mArmor,.30);
@@ -3195,11 +3243,14 @@ window.createMinotaur = function () {
   shotG.add(_at(_K(.028,.06,4,mGun), 0,-.14,.0, Math.PI,0,0));
   // Foregrip
   shotG.add(_at(_C(.04,.04,.18,4,mWood), 0,-.060,.38, Math.PI/2,0,0));
-  // Held by stock grip, barrel points forward
-  shotG.rotation.set(.20, 0, Math.PI); // flip so stock is in hand, barrel forward
-  shotG.position.set(0,-.06,-.08); // stock in hand
+  // Held by grip/handle end — stock grip at hand, barrel points forward
+  // The stock is at negative Z (-.28/-.56 range), barrels at positive Z
+  // We want the grip area (near Z=-.28) to be at the hand
+  shotG.rotation.set(.20, 0, 0); // barrel points forward along Z
+  shotG.position.set(0,-.06,.26); // shift so stock/grip area aligns with hand
   aR.handG.add(shotG);
 
+  root.scale.setScalar(0.85);
   root.userData.refs = {
     torso:torsoG, head:headG,
     armL:aL.shoulderG, armR:aR.shoulderG,
@@ -3393,19 +3444,30 @@ window.createRatKing = function () {
   [-1,1].forEach(sx=>headG.add(_at(_C(.090,.090,.046,5,mGray),sx*.22,.40,-.04,Math.PI/2,0,0)));
   for(let sx=-1;sx<=1;sx+=2) for(let j=0;j<3;j++)headG.add(_at(_B(.30,.009,.009,mFurD),sx*.22,.08-j*.04,.38,0,0,sx*.10+j*.04));
 
-  const crownG=new THREE.Group();crownG.position.set(0,.42,0);headG.add(crownG);
-  crownG.add(_at(_C(.22,.22,.074,5,mGold),0,0,0));
-  for(let i=0;i<5;i++){const a=i/5*Math.PI*2;crownG.add(_at(_K(.042,.18,4,mGold),Math.cos(a)*.16,.09,Math.sin(a)*.16));if(i%2===0)crownG.add(_at(_O(.034,mRuby),Math.cos(a)*.16,.20,Math.sin(a)*.16));}
+  const crownG=new THREE.Group();crownG.position.set(0,.44,0);headG.add(crownG); // raised slightly
+  crownG.add(_at(_C(.24,.24,.090,5,mGold),0,0,0)); // wider crown band
+  crownG.add(_at(_C(.26,.26,.030,5,mGold),0,.06,0)); // top rim
+  crownG.add(_at(_C(.26,.26,.030,5,mGold),0,-.06,0)); // bottom rim
+  for(let i=0;i<5;i++){
+    const a=i/5*Math.PI*2;
+    crownG.add(_at(_K(.050,.22,4,mGold),Math.cos(a)*.18,.10,Math.sin(a)*.18)); // bigger spires
+    if(i%2===0) crownG.add(_at(_O(.040,mRuby),Math.cos(a)*.18,.24,Math.sin(a)*.18)); // bigger rubies
+    else crownG.add(_at(_O(.032,_m(0x0044FF,.04,.0,0x0022FF,4.0)),Math.cos(a)*.18,.20,Math.sin(a)*.18)); // sapphires on alternate
+  }
 
   const sword=new THREE.Group();
-  sword.add(_at(_C(.040,.040,.40,4,mBone),0,0,0)); // thicker hilt
+  sword.add(_at(_C(.040,.040,.40,4,mBone),0,0,0)); // thicker hilt/handle at y=0
   sword.add(_at(_B(.24,.06,.06,mBone),0,.24,0)); // wider crossguard
-  sword.add(_at(_B(.054,.72,.054,mBone),0,.60,0)); // longer blade
-  sword.add(_at(_K(.054,.18,4,mBone),0,1.00,0)); // sharp tip
+  sword.add(_at(_B(.054,.72,.054,mBone),0,.60,0)); // longer blade going up
+  sword.add(_at(_K(.054,.18,4,mBone),0,1.00,0)); // sharp tip at top
   // Bone notches on blade
   for(let i=0;i<4;i++) sword.add(_at(_B(.07,.04,.02,mArD),0,.36+i*.14,.03));
-  sword.rotation.set(Math.PI/2,0,.16);sword.position.set(0,-.10,.10);aR.handG.add(sword);
+  // Hold upright, tip pointing up, handle in hand — sword held in front
+  sword.rotation.set(Math.PI/2,0,0); // point blade forward/upward
+  sword.position.set(0,-.08,.12); // in front of hand
+  aR.handG.add(sword);
 
+  root.scale.setScalar(0.88);
   root.userData.refs={torso:torsoG,head:headG,armL:aL.shoulderG,armR:aR.shoulderG,legL,legR,tail:tailG,crown:crownG,sword};
   return root;
 };
@@ -3490,16 +3552,33 @@ window.createShaman = function () {
   torsoG.add(_at(_O(.058,mPaintB), -.08,.46,.26));
   torsoG.add(_at(_O(.058,mPaintB),  .08,.46,.26));
   torsoG.add(_at(_O(.058,mPaintB),  0,  .38,.26));
-  // Back tribal decorations — spine bones and painted patterns
-  for (let i = 0; i < 6; i++)
-    torsoG.add(_at(_O(.036,mBone), 0,.06+i*.10,-.24)); // spine knobs
-  for (let i = 0; i < 4; i++) {
-    torsoG.add(_at(_B(.08,.06,.028,mPaintR), -.18+i*.12,.20,-.25, 0,0,(i%2===0?.30:-.30))); // back tribal marks
-    torsoG.add(_at(_K(.022,.10,4,mBone), -.18+i*.12,.34,-.24, Math.PI*.80,0,0)); // bone spine spikes
+  // Back tribal decorations — detailed spine bones and painted patterns
+  // Spine bone column — vertical knobs
+  for (let i = 0; i < 8; i++)
+    torsoG.add(_at(_O(.040,mBone), 0,.04+i*.08,-.24)); // spine knobs bigger
+  // Spine bone spikes (pointing outward from spine)
+  for (let i = 0; i < 5; i++) {
+    torsoG.add(_at(_K(.026,.14,4,mBone), 0,.12+i*.10,-.26, Math.PI*.75,0,0)); // center spikes
+    if (i < 4) {
+      torsoG.add(_at(_K(.020,.10,4,mBone), -.12,.12+i*.10,-.24, Math.PI*.80,0,-.30)); // left spikes angled
+      torsoG.add(_at(_K(.020,.10,4,mBone),  .12,.12+i*.10,-.24, Math.PI*.80,0, .30)); // right spikes angled
+    }
   }
-  torsoG.add(_at(_B(.38,.04,.028,mPaintW), 0,.40,-.25)); // white band
-  torsoG.add(_at(_B(.38,.04,.028,mPaintW), 0,.24,-.25)); // white band
-  torsoG.add(_at(_B(.38,.04,.028,mPaintB), 0,.32,-.25)); // blue band
+  // Tribal painted X patterns on back
+  for (let i = 0; i < 4; i++) {
+    torsoG.add(_at(_B(.08,.06,.028,mPaintR), -.18+i*.12,.20,-.25, 0,0,(i%2===0?.35:-.35)));
+    torsoG.add(_at(_B(.06,.06,.028,mPaintB), -.18+i*.12,.28,-.25, 0,0,(i%2===0?-.35:.35)));
+  }
+  // Horizontal tribal bands
+  torsoG.add(_at(_B(.40,.044,.030,mPaintW), 0,.42,-.25)); // white band top
+  torsoG.add(_at(_B(.40,.044,.030,mPaintR), 0,.34,-.25)); // red band mid
+  torsoG.add(_at(_B(.40,.044,.030,mPaintW), 0,.26,-.25)); // white band lower
+  torsoG.add(_at(_B(.40,.044,.030,mPaintB), 0,.18,-.25)); // blue band bottom
+  // Bone hanging tassels on sides of back
+  for (let i = 0; i < 3; i++) {
+    torsoG.add(_at(_K(.018,.12,4,mBone), -.26,.42-i*.10,-.22, Math.PI,0,-.10));
+    torsoG.add(_at(_K(.018,.12,4,mBone),  .26,.42-i*.10,-.22, Math.PI,0, .10));
+  }
 
   // Bone necklace
   torsoG.add(_at(_C(.14,.14,.050,5,mBone), 0,.68,0));
@@ -3527,8 +3606,10 @@ window.createShaman = function () {
   headG.position.set(0,.26,0); neckG.add(headG);
   headG.add(_at(_B(.50,.46,.44,mSkin),   0,.10,0)); // SQUARE head
   headG.add(_at(_B(.44,.40,.12,mSkinL),  0,.10,.24)); // face panel
-  headG.add(_at(_O(.062,_m(0xFF2200,.04,.0,0xFF0000,7.0)), -.10,.14,.26)); // RED glowing eyes
-  headG.add(_at(_O(.062,_m(0xFF2200,.04,.0,0xFF0000,7.0)),  .10,.14,.26));
+  headG.add(_at(_O(.072,_m(0xFF0000,.02,.0,0xFF0000,10.0)), -.10,.14,.26)); // RED glowing eyes BRIGHT
+  headG.add(_at(_O(.072,_m(0xFF0000,.02,.0,0xFF0000,10.0)),  .10,.14,.26));
+  headG.add(_at(_O(.040,_m(0xFF6600,.04,.0,0xFF4400,8.0)), -.10,.14,.28)); // inner glow
+  headG.add(_at(_O(.040,_m(0xFF6600,.04,.0,0xFF4400,8.0)),  .10,.14,.28));
 
   // BIG WOODEN MASK — TALL, LONG, and detailed with big eyes+mouth
   const maskG = new THREE.Group();
@@ -4699,13 +4780,13 @@ function createHeroKnight(){
   const mRed    = _m(0x7f1d1d, .80, .0);
   const mGoldE  = _m(0xfbbf24, .18, .82, 0xf59e0b, .6);
 
-  // ---- LEGS (hip joints at y=0, the character root) ----
-  const legL = _buildLegV3(mBlue, mSteel, mGold, mDark, mGold);
-  legL.position.set(-.24, 0, 0);
+  // ---- LEGS (hip joints at y=0, the character root) — shorter legs ----
+  const legL = _buildLegV3(mBlue, mSteel, mGold, mDark, mGold, .22, .32, .28, .18); // shorter params
+  legL.position.set(-.22, 0, 0);
   root.add(legL);
 
-  const legR = _buildLegV3(mBlue, mSteel, mGold, mDark, mGold);
-  legR.position.set( .24, 0, 0);
+  const legR = _buildLegV3(mBlue, mSteel, mGold, mDark, mGold, .22, .32, .28, .18); // shorter params
+  legR.position.set( .22, 0, 0);
   root.add(legR);
 
   // ---- PELVIS (at y=0, bridging both legs) ----
@@ -4837,6 +4918,7 @@ function createHeroKnight(){
   for(let i=0;i<6;i++) capeG.add(_at(_B(.09,.07,.05,mCloth), -.25+i*.10, -.70, 0));
   torsoG.add(capeG);
 
+  root.scale.setScalar(0.88);
   root.userData.refs = {
     torso: torsoG,
     armL:  aL.shoulderG,
@@ -4999,16 +5081,18 @@ function createHeroNecromancer(){
   skull.position.set(0, -.07, 0);
   aR.handG.add(skull);
 
-  // ---- STAFF (attached to right shoulder, floats alongside) ----
+  // ---- STAFF (held in RIGHT hand, pointing up-forward) ----
   const staffG = new THREE.Group();
-  staffG.add(_at(_C(.03, .03, 1.20, 6, mStaff),      0,  .60, 0)); // shaft
-  staffG.add(_at(_C(.05, .05, .055, 6, mBone),        0,  .90, 0)); // ring hi
-  staffG.add(_at(_C(.05, .05, .055, 6, mBone),        0,  .30, 0)); // ring lo
-  staffG.add(_at(_S(.13, 5, 4, mBone),                0, 1.10, 0)); // skull top
-  staffG.add(_at(_S(.17, 6, 5, mGlow),                0, 1.10, 0)); // glow orb
-  staffG.position.set(.44, .60, .28);
-  staffG.rotation.set(-.20, 0, .10);
-  aR.shoulderG.add(staffG);
+  // Staff shaft — handle at bottom (y=0), top goes up
+  staffG.add(_at(_C(.03, .03, 1.20, 6, mStaff),      0, -.60, 0)); // shaft (centered at -.60 so base is at 0)
+  staffG.add(_at(_C(.05, .05, .055, 6, mBone),        0, -.30, 0)); // ring hi
+  staffG.add(_at(_C(.05, .05, .055, 6, mBone),        0, -.90, 0)); // ring lo
+  staffG.add(_at(_S(.13, 5, 4, mBone),                0, -1.10, 0)); // skull top (at bottom of shaft)
+  staffG.add(_at(_S(.17, 6, 5, mGlow),                0, -1.10, 0)); // glow orb
+  // Hold grip at top, tip/skull at bottom — rotate so shaft goes upward
+  staffG.rotation.set(-.30, .14, .08); // slight tilt forward and to side
+  staffG.position.set(0, -.06, .06); // at hand position
+  aR.handG.add(staffG);
 
   // ---- CAPE (back of torso) ----
   const capeG = new THREE.Group();
@@ -5273,10 +5357,10 @@ function createHeroHuntress(){
   torsoG.rotation.y = -.18;           // slight turn for archer pose
   root.add(torsoG);
 
-  torsoG.add(_at(_C(.23,.27,.54,8,mSkin),  0, .27, 0));
-  torsoG.add(_at(_C(.21,.25,.44,8,mSkin),  0,-.17, 0));
-  torsoG.add(_at(_C(.27,.31,.56,8,mLeath), 0, .27, 0));
-  torsoG.add(_at(_C(.25,.29,.46,8,mLeath), 0,-.17, 0));
+  torsoG.add(_at(_B(.50,.54,.40,mSkin),  0, .27, 0));   // SQUARE torso body
+  torsoG.add(_at(_B(.46,.44,.36,mSkin),  0,-.17, 0));   // lower torso square
+  torsoG.add(_at(_B(.54,.56,.42,mLeath), 0, .27, 0));   // leather over-jacket square
+  torsoG.add(_at(_B(.50,.46,.38,mLeath), 0,-.17, 0));   // lower jacket square
   // Front seam + clasps
   torsoG.add(_at(_B(.055,.52,.04,mDark),  0, .09, .29));
   for(let i=0;i<5;i++) torsoG.add(_at(_B(.055,.055,.055,mMetal), 0, .42-i*.11, .27));
@@ -5306,9 +5390,9 @@ function createHeroHuntress(){
   headG.position.set(0, .20, 0);
   neckG.add(headG);
 
-  headG.add(_at(_B(.34,.28,.30,mSkin),  0, .13, 0));
-  headG.add(_at(_B(.32,.11,.28,mSkin),  0,  .0, 0));
-  headG.add(_at(_B(.28,.09,.26,mSkin),  0,-.09, 0));
+  headG.add(_at(_B(.38,.32,.34,mSkin),  0, .13, 0));  // square head larger
+  headG.add(_at(_B(.36,.12,.32,mSkin),  0,  .0, 0));  // mid face square
+  headG.add(_at(_B(.34,.10,.30,mSkin),  0,-.10, 0));  // jaw square
   headG.add(_at(_S(.062,6,4,mEye), -.10,.17,.17));
   headG.add(_at(_S(.062,6,4,mEye),  .10,.17,.17));
   headG.add(_at(_K(.034,.08,4,mSkin), 0,.07,.17, Math.PI/2,0,0));
@@ -5352,13 +5436,7 @@ function createHeroHuntress(){
   torsoG.add(aR.shoulderG);
 
   aR.upperArmG.add(_at(_B(.17,.05,.17,mFur), 0,-.29, 0));
-  // Arrow nocked at hand
-  const arrow = new THREE.Group();
-  arrow.add(_at(_C(.011,.011,.44,4,_m(0x92400e,.85)), 0, 0, 0));
-  arrow.add(_at(_K(.019,.07,4,mMetal), 0,.25, 0));
-  arrow.add(_at(_O(.023,mIce2), 0,.28, 0));
-  arrow.position.set(0,-.52,-.06);
-  aR.handG.add(arrow);
+  // Arrow nocked at hand — removed arrow from hand (was appearing stuck in leg visually)
 
   // Quiver on back
   const quivG = new THREE.Group();
@@ -5546,11 +5624,11 @@ function createHeroAlchemist(){
   flask.position.set(0,-.08,0);
   aL.handG.add(flask);
 
-  // ---- RIGHT ARM — UP holding test tube ----
+  // ---- RIGHT ARM — FORWARD holding test tube/staff in front ----
   const aR = _buildArmV3(mCoat, mCoat, mBrass, mShirt, mLeath, mBrass, .28,.24, false, true);
   aR.shoulderG.position.set( .42, .62, 0);
-  // ARM UP: negative x rotates arm UP; z=+.55 opens elbow to the SIDE
-  aR.shoulderG.rotation.set(-1.0, 0, -.55);
+  // ARM FORWARD: arm extends forward along Z axis, not sideways
+  aR.shoulderG.rotation.set(-.70, .20, -.20);
   torsoG.add(aR.shoulderG);
 
   // Pink test tube in hand
@@ -15861,12 +15939,12 @@ try {
         const mRed    = _m(0x4a0000, .80, .0);
         const mCape   = _m(0x060606, .95, .0);
 
-        // LEGS — wide stance
-        const legL = _buildLegV3(mBlack, mDGray, mSilvD, mDark, mSilver, .32,.52,.46,.28);
-        legL.position.set(-.30, 0, 0);
+        // LEGS — wide stance, shortened
+        const legL = _buildLegV3(mBlack, mDGray, mSilvD, mDark, mSilver, .28,.40,.36,.22);
+        legL.position.set(-.26, 0, 0);
         root.add(legL);
-        const legR = _buildLegV3(mBlack, mDGray, mSilvD, mDark, mSilver, .32,.52,.46,.28);
-        legR.position.set( .30, 0, 0);
+        const legR = _buildLegV3(mBlack, mDGray, mSilvD, mDark, mSilver, .28,.40,.36,.22);
+        legR.position.set( .26, 0, 0);
         root.add(legR);
 
         // PELVIS — narrower than chest (tapering effect starts here)
@@ -15969,26 +16047,28 @@ try {
         torsoG.add(aR.shoulderG);
         for(let f=0;f<4;f++) aR.handG.add(_at(_B(.04,.10,.04,mDark), -.045+f*.030,-.12,.04));
 
-        // GREATSWORD — thin wide blade resting across shoulders, grip in raised hand
+        // GREATSWORD — held by HANDLE (grip end at hand, blade extends up/back)
         const sword = new THREE.Group();
-        sword.add(_at(_B(.04,2.80,.22,mDGray),   0,0,0));
-        sword.add(_at(_B(.015,2.70,.20,mSilver),  .025,0,0));
-        sword.add(_at(_B(.015,2.70,.20,mSilver), -.025,0,0));
-        sword.add(_at(_K(.05,.24,4,mSilver),      0,1.42,0));
-        sword.add(_at(_B(.015,2.20,.02,mBlack),   0,0,.12));
-        // Crossguard
-        sword.add(_at(_B(.08,.10,.44,mSilver),    0,-.64,0));
-        sword.add(_at(_K(.04,.14,4,mSilver),      0,-.64,.24,  Math.PI/2,0,0));
-        sword.add(_at(_K(.04,.14,4,mSilver),      0,-.64,-.24, -Math.PI/2,0,0));
-        // Grip in raised hand
-        sword.add(_at(_B(.06,.38,.06,mDark),      0,-.84,0));
-        for(let i=0;i<5;i++) sword.add(_at(_B(.08,.04,.08,mGray), 0,-.68-i*.07,0));
-        sword.add(_at(_B(.12,.12,.12,mSilver),    0,-1.06,0));
-        sword.add(_at(_K(.06,.14,4,mSilver),      0,-1.14,0, Math.PI,0,0));
-        // Sword is horizontal, blade extends sideways across both shoulders
-        sword.rotation.z = Math.PI / 2 + 1.20; // compensate arm angle so blade lies flat
+        // Blade (extends upward from crossguard)
+        sword.add(_at(_B(.04,2.40,.22,mDGray),   0,1.20,0));  // blade goes up
+        sword.add(_at(_B(.015,2.30,.20,mSilver),  .025,1.20,0));
+        sword.add(_at(_B(.015,2.30,.20,mSilver), -.025,1.20,0));
+        sword.add(_at(_K(.05,.24,4,mSilver),      0,2.42,0));  // blade tip at top
+        sword.add(_at(_B(.015,1.80,.02,mBlack),   0,1.20,.12));
+        // Crossguard — at Y=0 (hand holds grip below crossguard)
+        sword.add(_at(_B(.08,.10,.44,mSilver),    0,.06,0));
+        sword.add(_at(_K(.04,.14,4,mSilver),      0,.06,.24,  Math.PI/2,0,0));
+        sword.add(_at(_K(.04,.14,4,mSilver),      0,.06,-.24, -Math.PI/2,0,0));
+        // GRIP — handle at Y=0 to Y=-.40 (held in hand)
+        sword.add(_at(_B(.06,.38,.06,mDark),      0,-.20,0));
+        for(let i=0;i<5;i++) sword.add(_at(_B(.08,.04,.08,mGray), 0,-.04-i*.07,0));
+        // Pommel at bottom
+        sword.add(_at(_B(.12,.12,.12,mSilver),    0,-.42,0));
+        sword.add(_at(_K(.06,.14,4,mSilver),      0,-.50,0, Math.PI,0,0));
+        // Arm raised high, sword handle in hand, blade rests on shoulder
+        sword.rotation.z = .60; // tilt so blade goes over shoulder
         sword.rotation.y = -.08;
-        sword.position.set(0, -.12, .04);
+        sword.position.set(0, -.10, .04);
         aR.handG.add(sword);
 
         // Cape — very long, floor-length and beyond, billows dramatically
@@ -16003,6 +16083,7 @@ try {
         for(let i=0;i<12;i++) capeG.add(_at(_B(.08,.18+Math.sin(i*.8)*.06,.05,mCape), -.48+i*.088,-1.60,0));
         torsoG.add(capeG);
 
+        root.scale.setScalar(0.86);
         root.userData.refs = {
             torso: torsoG, armL: aL.shoulderG, armR: aR.shoulderG,
             legL, legR, cape: capeG, helm: headG, head: headG
